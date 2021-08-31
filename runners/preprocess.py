@@ -6,10 +6,12 @@ import pipeline.preprocess as preprocess
 import src.utils.factory as factory
 from src.transforms.transforms import Compose
 
-INPUT = "data/AerialImageDataset"
+FILE_NAME = Path(__file__).stem
+INPUT  = Path("data/AerialImageDataset")
+OUTPUT = Path(f"{FILE_NAME}/output") 
 
 def prepare_pip_arguments(config_args: dict):
-    global INPUT
+    global INPUT, OUTPUT
     args = {}
     preprocs = []
     for preproc_dict in config_args["preprocess"]:
@@ -17,12 +19,11 @@ def prepare_pip_arguments(config_args: dict):
         preprocs.append(preproc_fun)
     args["dataset"] = factory.get_object_from_standard_name(config_args["dataset"])(root=INPUT, transforms=Compose(preprocs))
     args["format"] = config_args["format"]
-    args["output_dir"] = Path(f"{Path(__file__).stem}/output")
+    args["output_dir"] = OUTPUT
     return args
 
 if __name__ == "__main__":
-    file_name = Path(__file__).stem
-    args = shared_logic.get_pipeline_stage_args(file_name)
-    shared_logic.log_arguments(file_name, args)
+    args = shared_logic.get_pipeline_stage_args(FILE_NAME)
+    shared_logic.log_arguments(FILE_NAME, args)
     processed_args = prepare_pip_arguments(args)
     preprocess.process(**processed_args)
