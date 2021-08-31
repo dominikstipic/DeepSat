@@ -6,6 +6,7 @@ __pycache__/
 repository/*
 todo 
 config.json
+runner.bash
 
 # C extensions
 *.so
