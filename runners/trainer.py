@@ -43,7 +43,7 @@ def get_observers(observer_dict: dict):
             results[event_key].append(obs)
     return results
 
-def prepare_dicitionary(config_args: dict):
+def prepare_pip_arguments(config_args: dict):
     args = {} 
     args["model"] = factory.import_object(config_args['model'])
     datasets_dict = get_datasets()
@@ -61,6 +61,6 @@ if __name__ == "__main__":
     file_name = Path(__file__).stem
     args = shared_logic.get_pipeline_stage_args(file_name)
     shared_logic.log_arguments(file_name, args)
-    processed_args = prepare_dicitionary(args)
+    processed_args = prepare_pip_arguments(args)
     trainer.process(**processed_args)
 
