@@ -104,24 +104,30 @@ def _save_transformed_images(pipeline_stage_name: str, samples: int, train_paths
     pipeline_repository.push_images(valid_dir, valid_examples, valid_names)
     pipeline_repository.push_images(test_dir,  test_examples,  test_names)
 
-def _save_datasets(pipeline_stage_name: str, dataset, test_transf: Compose, train_shard_paths: list, valid_shard_paths: list, test_shard_paths: list):
+def _save_datasets(pipeline_stage_name: str, dataset, train_tf_transf: Compose, test_tf_transf: Compose, train_aug: Compose, test_aug: Compose, train_shard_paths: list, valid_shard_paths: list, test_shard_paths: list):
     train_db, valid_db, test_db = dataset.copy(), dataset.copy(), dataset.copy()
     train_db.tars = train_shard_paths
     valid_db.tars = valid_shard_paths
     test_db.tars  = test_shard_paths
-    test_db.transform = test_transf
+
+    train_tf = Compose.from_composits(train_aug, train_tf_transf) 
+    test_tf  = Compose.from_composits(test_aug, test_tf_transf)
+
+    train_db.transform = train_tf
+    valid_db.transform = train_tf
+    test_db.transform  = test_tf
 
     pipeline_repository.push_pickled_obj(pipeline_stage_name, "output", train_db, "train_db")
     pipeline_repository.push_pickled_obj(pipeline_stage_name, "output", valid_db, "valid_db")
     pipeline_repository.push_pickled_obj(pipeline_stage_name, "output", test_db, "test_db")
 
-def process(dataset, train_transf: Compose, test_transf: Compose, test_ratio: float, valid_ratio: float, viz_samples: int, input_dir: Path):
+def process(dataset, train_tensor_tf: Compose, test_tensor_tf: Compose, train_aug: Compose, test_aug: Compose, test_ratio: float, valid_ratio: float, viz_samples: int, input_dir: Path):
     pipeline_stage_name = Path(__file__).stem
     train_shard_paths, valid_shard_paths, test_shard_paths = _split_data(input_dir, test_ratio, valid_ratio)
-
-    _save_datasets(pipeline_stage_name, dataset, test_transf, train_shard_paths, valid_shard_paths, test_shard_paths)
+    
+    _save_datasets(pipeline_stage_name, dataset, train_tensor_tf, test_tensor_tf, train_aug, test_aug, train_shard_paths, valid_shard_paths, test_shard_paths)
     ####### artifacts for UI #######
     # CSV file with splits
     train_paths, valid_paths, test_paths = _save_splits_in_csv(pipeline_stage_name, train_shard_paths, valid_shard_paths, test_shard_paths)
     # Save transformed images and masks
-    _save_transformed_images(pipeline_stage_name, viz_samples, train_paths, valid_paths, test_paths, train_transf, test_transf)
+    _save_transformed_images(pipeline_stage_name, viz_samples, train_paths, valid_paths, test_paths, train_aug, test_aug)

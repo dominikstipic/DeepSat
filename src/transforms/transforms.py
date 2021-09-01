@@ -17,6 +17,16 @@ class Compose(object):
       xs = t(xs)
     return xs
 
+  def append(self, other_compose): 
+    self.transforms += other_compose.transforms
+
+  @staticmethod
+  def from_composits(*composits):
+    result = Compose([])
+    for c in composits:
+      result.append(c)
+    return result
+
 #######################
 
 class Resize(object):

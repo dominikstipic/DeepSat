@@ -1,6 +1,8 @@
 from pathlib import Path
 from runners.sharding import FILE_NAME
 
+import numpy as np
+
 from . import shared_logic as shared_logic
 from src.transforms.transforms import Compose
 import src.utils.pipeline_repository as pipeline_repository
@@ -13,7 +15,7 @@ INPUT  = Path("sharding/output") # TODO: What if I change sharding name
 def _get_composite_transf(transformations: list) -> Compose: 
     transf_list = []
     for transf_dict in transformations: 
-        transf = factory.import_object(transf_dict)
+        transf = factory.import_object(transf_dict, np=np)
         transf_list.append(transf)
     return Compose(transf_list)
 
@@ -23,15 +25,19 @@ def _get_train_test_transformations(trainsformation_dict: dict) -> tuple:
      return train_transf, test_transf
 
 def prepare_pip_arguments(config_args: dict) -> dict:
-    global INPUT, OUTPUT
-    input_dir = pipeline_repository.get_path(INPUT)
-    train_transf, test_transf = _get_train_test_transformations(config_args["transformations"])
-    test_ratio, valid_ratio = config_args["test_ratio"], config_args["valid_ratio"]
-    dataset = factory.get_object_from_standard_name(config_args["dataset"])(input_dir, train_transf)
+    global INPUT
     viz_samples = config_args["viz_samples"]
-    args = locals()
-    del args["config_args"]
-    return args
+    test_ratio, valid_ratio = config_args["test_ratio"], config_args["valid_ratio"]
+    
+    train_aug, test_aug = _get_train_test_transformations(config_args["augmentations"])
+    train_tensor_tf, test_tensor_tf = _get_train_test_transformations(config_args["tensor_transf"])
+
+    input_dir = pipeline_repository.get_path(INPUT)
+    dataset = factory.get_object_from_standard_name(config_args["dataset"])(input_dir, [])
+    d = dict(viz_samples=viz_samples, test_ratio=test_ratio, valid_ratio=valid_ratio, 
+             train_aug=train_aug, test_aug=test_aug, train_tensor_tf=train_tensor_tf, test_tensor_tf=test_tensor_tf, 
+             input_dir=input_dir, dataset=dataset)
+    return d
 
 if __name__ == "__main__":
     args = shared_logic.get_pipeline_stage_args(FILE_NAME)
