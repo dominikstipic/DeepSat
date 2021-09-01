@@ -1,5 +1,4 @@
 from pathlib import Path
-import copy
 
 from . import shared_logic as shared_logic
 import pipeline.preprocess as preprocess
