@@ -166,6 +166,13 @@ class Sat_Model(nn.Module):
       for obs in observers:
         if self.outer_state.state == obs.when or not obs.when:
           obs.reset_state()
+
+    def observer_results(self):
+      observers = merge_list_2d(self.observers.values())
+      results = [obs.get() for obs in observers] 
+      results = [m for m in results if m]
+      results = merge_list_dicts(results)
+      return results
       
     ################### MAIN #############################
 
@@ -233,13 +240,6 @@ class Sat_Model(nn.Module):
         self.reset_observers()
 
     ################### OTHER #############################
-    
-    def observer_results(self):
-      observers = merge_list_2d(self.observers.values())
-      results = [obs.get() for obs in observers] 
-      results = [m for m in results if m]
-      results = merge_list_dicts(results)
-      return results
 
     def print_state(self):
       metrics = self.observer_results()

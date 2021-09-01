@@ -81,7 +81,6 @@ class Sat_Dataset(torch.utils.data.Dataset):
         split1, split2 = deepcopy(self), deepcopy(self)
         n = len(self)
         split1_size = int(n*ratio)
-        split2_size = n - split1_size
         all_idx = np.arange(n)
         idx1 = np.random.choice(all_idx, size=split1_size, replace=False)
         idx2 = np.array(list(set(all_idx).difference(idx1)))

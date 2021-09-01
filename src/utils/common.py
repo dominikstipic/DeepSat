@@ -24,9 +24,9 @@ def read_json(path: Path) -> dict:
     json_dict = json.load(json_file)
   return json_dict
 
-def write_json(data, path):
-  with open(path, 'w') as fp:
-    json.dump(data, fp)
+def write_json(data: dict, path: Path):
+  with open(str(path), 'w') as fp:
+    json.dump(data, fp, indent=4)
 
 def current_time():
   tz = pytz.timezone('CET')
