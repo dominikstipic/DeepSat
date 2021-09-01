@@ -2,8 +2,10 @@ from pathlib import Path
 import csv
 import os
 import tarfile
+import pickle
 
 from src.datasets.tar_dataset import IDENTITY
+from src.utils import common
 from src.utils.common import load_pickle, save_pickle
 
 PIPELINE_REPO = Path("repository")
@@ -14,6 +16,14 @@ def get_path(str_path: str):
     if not str_path.startswith(str(PIPELINE_REPO)):
         return PIPELINE_REPO / str_path
     return Path(str_path)
+
+def create_dir(root_dir: Path):
+    root_dir = get_path(str(root_dir))
+    if not root_dir.exists(): 
+        os.makedirs(str(root_dir), exist_ok=True)
+    return root_dir
+
+##########################3
 
 def push_csv(pipeline_stage_name: str, csv_name: str, csv_header: list, data: list, default_dir="artifacts", write_function=IDENTITY, append=False):
     global PIPELINE_REPO
@@ -27,12 +37,6 @@ def push_csv(pipeline_stage_name: str, csv_name: str, csv_header: list, data: li
         for example in data:
             to_write = write_function(example)
             csvwriter.writerow(to_write)
-
-def create_dir(root_dir: Path):
-    root_dir = get_path(str(root_dir))
-    if not root_dir.exists(): 
-        os.makedirs(str(root_dir), exist_ok=True)
-    return root_dir
 
 def push_images(artifact_home_dir: Path, images: list, names: list):
     if not artifact_home_dir.exists(): artifact_home_dir=create_dir(artifact_home_dir)
@@ -55,20 +59,35 @@ def push_as_tar(input_file_paths: list, tar_output_path: Path) -> None:
             tar.add(str(img_path))
             tar.add(str(mask_path))
 
-def get_obj_paths(pipeline_stage_name: str, root_dir: Path):
-    path = get_path(Path(pipeline_stage_name) / root_dir)
-    return list(path.iterdir())
-
 def push_pickled_obj(pipeline_stage_name: str, pickle_dir: Path, pickle_object, pickle_name) -> Path:
     out_path = create_dir(Path(pipeline_stage_name) / pickle_dir)
     out_path = out_path / f"{pickle_name}.pickle"
     save_pickle(out_path, pickle_object)
     return out_path
 
-def get_objects_from_repo(pipeline_stage_name: str, obj_path: Path):
-    path = get_path(Path(pipeline_stage_name)/obj_path)
+def push_json(path: Path, dictionary: dict):
+    path = get_path(path)
+    common.write_json(dictionary, path)
+
+##################################
+
+def get_obj_paths(pipeline_stage_name: str, root_dir: Path):
+    path = get_path(Path(pipeline_stage_name) / root_dir)
+    return list(path.iterdir())
+
+
+############################################
+
+def get_object(repo_path: Path) -> pickle:
+    path = get_path(Path(repo_path))
+    pickle_obj = load_pickle(path)
+    return pickle_obj
+
+def get_objects_from_repo(repo_dir: Path) -> dict:
+    path = get_path(Path(repo_dir))
     result_dict = {}
     for obj_path in path.iterdir():
-        pickle_obj = load_pickle(obj_path)
+        pickle_obj = get_object(obj_path)
         result_dict[obj_path.stem] = pickle_obj
     return result_dict
+

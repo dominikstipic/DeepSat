@@ -14,18 +14,17 @@ OUTPUT = Path(f"{FILE_NAME}/output")
 def _get_datasets(input_path: Path):
     stage_name = input_path.parts[0]
     repo_path  = Path("/".join(input_path.parts[1:]))
-    previous_stage_obj_dict = pipeline_repository.get_objects_from_repo(stage_name, repo_path)
-    train_db, valid_db, test_db = previous_stage_obj_dict["train_db"], previous_stage_obj_dict["valid_db"], previous_stage_obj_dict["test_db"]
-    return dict(train_db=train_db, valid_db=valid_db, test_db=test_db)
+    previous_stage_obj_dict = pipeline_repository.get_objects_from_repo(Path(stage_name) / repo_path)
+    train_db, valid_db = previous_stage_obj_dict["train_db"], previous_stage_obj_dict["valid_db"]
+    return dict(train_db=train_db, valid_db=valid_db)
 
-def _create_dataloaders(dataloader_dict: dict, train_db, valid_db, test_db):
-    train_params, valid_params, test_params = dataloader_dict["train"], dataloader_dict["valid"], dataloader_dict["test"]
+def _create_dataloaders(dataloader_dict: dict, train_db, valid_db):
+    train_params, valid_params = dataloader_dict["train"], dataloader_dict["valid"]
     train_dl = factory.import_object(train_params, train_db=train_db)
     valid_dl = factory.import_object(valid_params, valid_db=valid_db)
-    test_dl = factory.import_object(test_params, test_db=test_db)
-    return dict(train_dl=train_dl, valid_dl=valid_dl, test_dl=test_dl)
+    return dict(train_dl=train_dl, valid_dl=valid_dl)
 
-def _get_observers(observer_dict: dict): 
+def get_observers(observer_dict: dict): 
     results = {key:[] for key in observer_dict}
     for event_key, event_obs in copy.deepcopy(observer_dict).items():
         for obs_name, obs_params in event_obs.items():
@@ -43,7 +42,7 @@ def prepare_pip_arguments(config_args: dict):
     args["optimizer"] = factory.import_object(config_args["optimizer"], model=args["model"])
     args["loss_function"] = factory.import_object(config_args['loss_function'])
     args["lr_scheduler"] = factory.import_object(config_args['lr_scheduler'], optimizer=args["optimizer"])
-    args["observers_dict"] = _get_observers(config_args["observers"])
+    args["observers_dict"] = get_observers(config_args["observers"])
     args["epochs"] = config_args["epochs"]
     args["device"] = config_args["device"]
     args["amp"] = config_args["amp"]

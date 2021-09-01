@@ -3,6 +3,7 @@ import torch
 
 import src.utils.pipeline_repository as pipeline_repository
 
+FILE_NAME = Path(__file__).stem
 _MODEL_NAME = "model.pt"
 
 def process(epochs: int, amp: bool, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, output_dir: Path):
@@ -19,5 +20,8 @@ def process(epochs: int, amp: bool, device: str, model, loader_dict: dict, loss_
     pipeline_repository.create_dir(output_dir)
     output_path = pipeline_repository.get_path(output_dir / _MODEL_NAME)
     torch.save(model, str(output_path))
+
+    pipeline_repository.push_pickled_obj(FILE_NAME, "output", model, "model")
+
 
 
