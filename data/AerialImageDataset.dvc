@@ -1,0 +1,5 @@
+outs:
+- md5: fc6db5ae90a47a0fb11bd0704a64c673.dir
+  size: 600324077
+  nfiles: 12
+  path: AerialImageDataset

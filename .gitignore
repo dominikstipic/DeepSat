@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+repository/*
+todo 
+config.json
+runner.bash
+
 # C extensions
 *.so
 
