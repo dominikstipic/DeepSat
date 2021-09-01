@@ -7,8 +7,8 @@ import tarfile
 import pickle
 
 def create_dir_if_not_exist(path: Path):
-    if not path.exists():
-        path.mkdir()
+  if not path.exists():
+    path.mkdir()
 
 def merge_list_dicts(dicts: list) -> dict:
   d = {}
