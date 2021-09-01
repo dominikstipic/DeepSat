@@ -14,7 +14,7 @@ OUTPUT = Path(f"{FILE_NAME}/output")
 def _get_datasets(input_path: Path):
     stage_name = input_path.parts[0]
     repo_path  = Path("/".join(input_path.parts[1:]))
-    previous_stage_obj_dict = pipeline_repository.get_objects_from_repo(stage_name, repo_path)
+    previous_stage_obj_dict = pipeline_repository.get_objects_from_repo(Path(stage_name) / repo_path)
     train_db, valid_db = previous_stage_obj_dict["train_db"], previous_stage_obj_dict["valid_db"]
     return dict(train_db=train_db, valid_db=valid_db)
 
