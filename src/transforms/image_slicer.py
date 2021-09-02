@@ -1,8 +1,6 @@
 from PIL import Image
 
 import torchvision
-import matplotlib.pyplot as plt
-import numpy as np
 
 ####### CROP STRATEGY #################
 
