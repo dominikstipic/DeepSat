@@ -6,7 +6,7 @@ import src.utils.factory as factory
 from src.transforms.transforms import Compose
 
 FILE_NAME = Path(__file__).stem
-INPUT  = Path("data/AerialImageDataset")
+INPUT  = Path("data")
 OUTPUT = Path(f"{FILE_NAME}/output") 
 
 def prepare_pip_arguments(config_args: dict):
