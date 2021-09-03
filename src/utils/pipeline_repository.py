@@ -11,13 +11,13 @@ from src.utils.common import load_pickle, save_pickle
 PIPELINE_REPO = Path("repository")
 IDENTITY = lambda x : x
 
-def get_path(str_path: str):
+def get_path(str_path: str) -> Path:
     str_path = str(str_path)
     if not str_path.startswith(str(PIPELINE_REPO)):
         return PIPELINE_REPO / str_path
     return Path(str_path)
 
-def create_dir(root_dir: Path):
+def create_dir_if_not_exist(root_dir: Path) -> Path:
     root_dir = get_path(str(root_dir))
     if not root_dir.exists(): 
         os.makedirs(str(root_dir), exist_ok=True)
@@ -25,21 +25,23 @@ def create_dir(root_dir: Path):
 
 ##########################3
 
-def push_csv(pipeline_stage_name: str, csv_name: str, csv_header: list, data: list, default_dir="artifacts", write_function=IDENTITY, append=False):
-    global PIPELINE_REPO
-    art_path = PIPELINE_REPO / pipeline_stage_name / default_dir 
-    if not art_path.exists(): art_path.mkdir()
-    out_path = art_path / csv_name 
+def push_csv(dir_path: Path, name: str, csv_header: list, data, append=False, write_function=IDENTITY) -> None:
+    dir_path = get_path(dir_path)
+    create_dir_if_not_exist(dir_path)
+    name = name + ".csv" if not name.endswith(".csv") else name
+    out_path = dir_path / name 
     flag = "w" if not append else "a" 
     with open(out_path, flag) as csvfile: 
         csvwriter = csv.writer(csvfile) 
-        csvwriter.writerow(csv_header) 
+        if not append: 
+            csvwriter.writerow(csv_header) 
         for example in data:
             to_write = write_function(example)
             csvwriter.writerow(to_write)
 
 def push_images(artifact_home_dir: Path, images: list, names: list):
-    if not artifact_home_dir.exists(): artifact_home_dir=create_dir(artifact_home_dir)
+    if not artifact_home_dir.exists(): 
+        artifact_home_dir=create_dir_if_not_exist(artifact_home_dir)
     for img_name, img in zip(names, images):
         img_path = artifact_home_dir / img_name 
         img.save(str(img_path))
@@ -49,7 +51,7 @@ def push_as_tar(input_file_paths: list, tar_output_path: Path) -> None:
     input_file_paths = [PIPELINE_REPO / p for p in input_file_paths]
 
     tar_name = tar_output_path.name
-    tar_output_path = create_dir(tar_output_path.parent)
+    tar_output_path = create_dir_if_not_exist(tar_output_path.parent)
     tar_output_path = tar_output_path / tar_name
 
     with tarfile.open(str(tar_output_path), "w:gz") as tar: 
@@ -60,13 +62,15 @@ def push_as_tar(input_file_paths: list, tar_output_path: Path) -> None:
             tar.add(str(mask_path))
 
 def push_pickled_obj(pipeline_stage_name: str, pickle_dir: Path, pickle_object, pickle_name) -> Path:
-    out_path = create_dir(Path(pipeline_stage_name) / pickle_dir)
+    out_path = create_dir_if_not_exist(Path(pipeline_stage_name) / pickle_dir)
     out_path = out_path / f"{pickle_name}.pickle"
     save_pickle(out_path, pickle_object)
     return out_path
 
-def push_json(path: Path, dictionary: dict):
-    path = get_path(path)
+def push_json(path_dir: Path, name: str, dictionary: dict):
+    path_dir = get_path(path_dir)
+    name = f"{name}.json" if name.endswith(".json") else name
+    path = create_dir_if_not_exist(path_dir) / name
     common.write_json(dictionary, path)
 
 ##################################
@@ -85,6 +89,7 @@ def get_object(repo_path: Path) -> pickle:
 
 def get_objects_from_repo(repo_dir: Path) -> dict:
     path = get_path(Path(repo_dir))
+    path = create_dir_if_not_exist(path)
     result_dict = {}
     for obj_path in path.iterdir():
         pickle_obj = get_object(obj_path)

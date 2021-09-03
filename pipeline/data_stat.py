@@ -40,7 +40,8 @@ def save_examples(examples: list, output_dir: Path, artifact_dir="examples"):
         plt.imshow(img)
         plt.subplot(1,2,2)
         plt.imshow(mask)
-        output = pipeline_repository.create_dir(output_dir / artifact_dir) / name
+        pipeline_repository.create_dir_if_not_exist(output_dir / artifact_dir)
+        output = pipeline_repository.get_path(output_dir / artifact_dir) / name
         plt.savefig(output)
 
 def process(viz_samples: int, input: str, output: str) -> None:
