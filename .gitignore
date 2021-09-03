@@ -5,8 +5,8 @@ __pycache__/
 
 repository/*
 todo 
-config.json
 runner.bash
+.dvc/service.json
 
 # C extensions
 *.so
@@ -132,3 +132,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/data

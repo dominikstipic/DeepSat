@@ -1,4 +1,7 @@
 [core]
     remote = drive
+[cache]
+    type = "hardlink,symlink"
 ['remote "drive"']
     url = gdrive://1Y1A_1jxkHMcyDmezcs6y4-abNnVAIeXe
+    gdrive_use_service_account = true
