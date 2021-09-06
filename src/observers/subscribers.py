@@ -1,10 +1,8 @@
-from pathlib import Path
-import shutil
 from pprint import pprint
+import functools
 
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
 
 import src.utils.pipeline_repository as pipeline_repository
 
@@ -99,7 +97,6 @@ class Running_Loss(Subscriber):
 
 ##################################################
 
-
 class StdPrinter(Subscriber):
     def __init__(self, when=None):
         Subscriber.__init__(self, when)
@@ -109,9 +106,7 @@ class StdPrinter(Subscriber):
         pprint(metrics)
         print("*******")
 
-
 ##################################################
-
 
 class MetricSaver(Subscriber):
     def __init__(self, path: str, when=None):
@@ -119,7 +114,6 @@ class MetricSaver(Subscriber):
         self.path = pipeline_repository.get_path(path)
         self.name = "metrics.csv"
         self.first_write = True
-
 
     def update(self, metrics, epoch, **kwargs):
         metrics["epoch"] = epoch
@@ -131,53 +125,54 @@ class MetricSaver(Subscriber):
             append = False
             self.first_write = False
         pipeline_repository.push_csv(self.path, self.name, csv_header, [data], append=append)
-            
-
-
+        
 ##################################################
 
-# class PredictionSaver(Subscriber):
-#     n = 1
-#     figsize = (10,10)
-#     def __init__(self, root, period):
-#         Subscriber.__init__(self)
-#         self.period = period
-#         self.root = Path(root) / "predictions"
-#         if self.root.exists():
-#             shutil.rmtree(self.root)
-#         self.root.mkdir()
+class ModelSaver(Subscriber):
+    def __init__(self, path: str, buffer_size: int, when=None):
+        Subscriber.__init__(self, when)
+        self.dir_path = path
+        pipeline_repository.create_dir_if_not_exist(self.dir_path)
+        self.buffer_size = buffer_size
 
-#     def update(self, kwargs):
-#         if "prediction" not in kwargs.keys():
-#             raise "Dictionary doesn't contain needed keys"
-#         epoch, iteration = kwargs["epoch"], kwargs["iter"]
-#         if iteration % self.period == 0:
-#             y_pred = kwargs["prediction"]
-#             name = f"epoch {epoch}, iter {iteration}.png"
-#             y_pred = y_pred.cpu()
-#             self.save(name, y_pred)
-#         self.n += 1
+    def update(self, model_state_dict, epoch, **kwargs):
+        epoch = epoch % self.buffer_size
+        path = self.dir_path + f"/{epoch}.pt"
+        path = pipeline_repository.get_path(path)
+        torch.save(model_state_dict, str(path))
+
+##################################################
     
-#     def save(self, name, y_pred):
-#         batch_size = len(y_pred)
-#         nrow = int(np.sqrt(batch_size))
-#         ncol = batch_size - nrow
-#         plt.figure(figsize=self.figsize)
-#         if nrow > 0 and ncol > 0:
-#             for k in range(nrow+ncol):
-#                 plt.subplot(nrow, ncol, k+1)
-#                 plt.imshow(y_pred[k])
-#                 plt.axis("off")
-#             plt.tight_layout()
-#         else:
-#             plt.imshow(y_pred.squeeze())
-#             plt.axis("off")
-#         name = self.root / name
-#         plt.savefig(name)
-#         plt.close()
+class _EarlyStopperError(Exception):
+    def __init__(self, message=None):
+        self.message = message
+        super().__init__(self.message)
 
-#     def reset_state(self):
-#         self.n = 1
+class EarlyStoper(Subscriber):
+    def __init__(self, lookback, when="TEST"):
+        Subscriber.__init__(self, when)
+        assert lookback >= 2, "lookback parameter must be greater than 2"
+        self.lookback = lookback
+        self.losses = []
+    
+    def is_monothonicaly_increasing(self, xs):
+        values = []
+        for i in range(len(xs)-1):
+            increasing = xs[i+1] > xs[i]
+            values.append(increasing)
+        value = functools.reduce(lambda a, b: a and b, values)
+        return value
 
-            
+    def last_k(self, xs, k):
+        return xs[-k:]
+
+    def update(self, loss, **kwargs):
+        self.losses.append(loss)
+        if len(self.losses) < self.lookback:
+            return
+        rev_losses = self.last_k(self.losses, self.lookback)
+        value = self.is_monothonicaly_increasing(rev_losses)
+        if value:
+            raise _EarlyStopperError(f"Early stoping at epoch {len(self.losses)}")
+
 
