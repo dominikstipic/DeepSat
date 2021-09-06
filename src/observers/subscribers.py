@@ -1,11 +1,8 @@
-from os import pipe
-from pathlib import Path
-import shutil
 from pprint import pprint
+import functools
 
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
 
 import src.utils.pipeline_repository as pipeline_repository
 
@@ -137,7 +134,6 @@ class ModelSaver(Subscriber):
         self.dir_path = path
         pipeline_repository.create_dir_if_not_exist(self.dir_path)
         self.buffer_size = buffer_size
-        self.when = when
 
     def update(self, model_state_dict, epoch, **kwargs):
         epoch = epoch % self.buffer_size
@@ -147,6 +143,36 @@ class ModelSaver(Subscriber):
 
 ##################################################
     
+class _EarlyStopperError(Exception):
+    def __init__(self, message=None):
+        self.message = message
+        super().__init__(self.message)
 
-            
+class EarlyStoper(Subscriber):
+    def __init__(self, lookback, when="TEST"):
+        Subscriber.__init__(self, when)
+        assert lookback >= 2, "lookback parameter must be greater than 2"
+        self.lookback = lookback
+        self.losses = []
+    
+    def is_monothonicaly_increasing(self, xs):
+        values = []
+        for i in range(len(xs)-1):
+            increasing = xs[i+1] > xs[i]
+            values.append(increasing)
+        value = functools.reduce(lambda a, b: a and b, values)
+        return value
+
+    def last_k(self, xs, k):
+        return xs[-k:]
+
+    def update(self, loss, **kwargs):
+        self.losses.append(loss)
+        if len(self.losses) < self.lookback:
+            return
+        rev_losses = self.last_k(self.losses, self.lookback)
+        value = self.is_monothonicaly_increasing(rev_losses)
+        if value:
+            raise _EarlyStopperError(f"Early stoping at epoch {len(self.losses)}")
+
 
