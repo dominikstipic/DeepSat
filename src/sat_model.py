@@ -1,7 +1,3 @@
-from pdb import set_trace
-from pprint import pprint
-import copy
-
 import torch
 import torch.nn as nn
 from tqdm import tqdm
@@ -153,6 +149,7 @@ class Sat_Model(nn.Module):
       state = self.outer_state.get()
       metrics = self.observer_results()
       state["metrics"] = metrics
+      state["model_state_dict"] = self.state_dict()
       observers = merge_list_2d(self.observers.values()) if not key else self.observers[key]
       for obs in observers:
         if self.outer_state.state == obs.when or not obs.when:
