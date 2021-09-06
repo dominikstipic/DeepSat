@@ -14,8 +14,7 @@ def process(model, device: str, test_ld: DataLoader, observers_dict: dict, outpu
     results = model.observer_results()
 
     output_dir = pipeline_repository.create_dir_if_not_exist(output_dir)
-    output = output_dir / _OUT_NAME
-    pipeline_repository.push_json(output, "metric.json", results)
+    pipeline_repository.push_json(output_dir, _OUT_NAME, results)
 
 
 

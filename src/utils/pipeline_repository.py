@@ -69,7 +69,8 @@ def push_pickled_obj(pipeline_stage_name: str, pickle_dir: Path, pickle_object, 
 
 def push_json(path_dir: Path, name: str, dictionary: dict):
     path_dir = get_path(path_dir)
-    name = f"{name}.json" if name.endswith(".json") else name
+
+    name = f"{name}.json" if not name.endswith(".json") else name
     path = create_dir_if_not_exist(path_dir) / name
     common.write_json(dictionary, path)
 

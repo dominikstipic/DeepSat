@@ -15,7 +15,7 @@ OUTPUT = Path(f"{FILE_NAME}/output")
 def prepare_pip_arguments(config_args: dict):
     global INPUT, OUTPUT
     args = {}
-    args["model"] = pipeline_repository.get_object(MOLDEL_INPUT)
+    args["model"]  = pipeline_repository.get_object(MOLDEL_INPUT)
     args["device"] = config_args["device"]
     dataset = pipeline_repository.get_object(DATASET_INPUT)
     args["test_ld"] = factory.import_object(config_args["dataloader"], test_db=dataset)
