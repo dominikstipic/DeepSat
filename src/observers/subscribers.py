@@ -1,14 +1,17 @@
 from pathlib import Path
 import shutil
+from pprint import pprint
 
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
+import src.utils.pipeline_repository as pipeline_repository
+
 
 class Subscriber():
-    def __init__(self):
-        pass
+    def __init__(self, when):
+        self.when = when
 
     def update(self, **kwargs):
         pass
@@ -24,11 +27,10 @@ class Subscriber():
 class Confusion_Matrix(Subscriber):
     def __init__(self, class_num: int, metrics: list, when=None, ignore_idx=[]):
         if type(ignore_idx) == int: ignore_idx = [ignore_idx]
-        Subscriber.__init__(self)
+        Subscriber.__init__(self, when)
         self.CF = np.zeros([class_num, class_num])
         self.class_num = class_num
         self.ignore_idx = ignore_idx
-        self.when = when
         self._observers = {}
         for metric in metrics:
             self._observers[metric.__name__] = metric
@@ -71,11 +73,10 @@ class Confusion_Matrix(Subscriber):
 
 class Running_Loss(Subscriber):
     def __init__(self, name, when=None):
-        Subscriber.__init__(self)
+        Subscriber.__init__(self, when)
         self.name = name
         self.loss = 0
         self.n = 0
-        self.when = when
 
     def update(self, input, loss, **kwargs):
         batch_num = len(input)
@@ -95,6 +96,43 @@ class Running_Loss(Subscriber):
         avg_loss = None if self.n == 0 else (self.loss / self.n).item()
         d = {self.name : avg_loss}
         return d
+
+##################################################
+
+
+class StdPrinter(Subscriber):
+    def __init__(self, when=None):
+        Subscriber.__init__(self, when)
+
+    def update(self, epoch, metrics, **kwargs):
+        print(f"epoch : {epoch}")
+        pprint(metrics)
+        print("*******")
+
+
+##################################################
+
+
+class MetricSaver(Subscriber):
+    def __init__(self, path: str, when=None):
+        Subscriber.__init__(self, when)
+        self.path = pipeline_repository.get_path(path)
+        self.name = "metrics.csv"
+        self.first_write = True
+
+
+    def update(self, metrics, epoch, **kwargs):
+        metrics["epoch"] = epoch
+        xs = list(metrics.items())
+        csv_header = list(map(lambda x: x[0], xs))
+        data = list(map(lambda x: x[1], xs)) 
+        append = True
+        if self.first_write:
+            append = False
+            self.first_write = False
+        pipeline_repository.push_csv(self.path, self.name, csv_header, [data], append=append)
+            
+
 
 ##################################################
 
@@ -142,22 +180,4 @@ class Running_Loss(Subscriber):
 #         self.n = 1
 
             
-# class Vizualizer(Subscriber):
-#     def __init__(self, period, keys):
-#         Subscriber.__init__(self)
-#         self.period = period
-#         self.keys = keys
 
-#     def update(self, kwargs):
-#         epoch = kwargs["epoch"]
-#         if epoch % self.period == 0:
-#             plot_metrics(self.keys)
-            
-# def plot_metrics(keys):
-#     storage = Storage.get()
-#     metrics = storage.get_metrics()
-#     for key in keys:
-#         values = [m[key] for m in metrics]
-#         plt.plot(values, label=key)
-#     plt.legend()
-#     plt.show()

@@ -1,6 +1,5 @@
 from pdb import set_trace
 from pprint import pprint
-import warnings
 import copy
 
 import torch
@@ -64,7 +63,6 @@ class Sat_Model(nn.Module):
     
     @use_amp.setter
     def use_amp(self, value: bool):
-      warnings.warn(f'amp learning: {value}')
       if value:
         assert self.optimizer, "Optimizer should be defined"
         assert self.loss_function, "Loss function should be defined"
@@ -79,7 +77,6 @@ class Sat_Model(nn.Module):
     
     @step_timer.setter
     def step_timer(self, value: bool):
-      warnings.warn(f'step timer: {value}')
       self._step_timer = CodeTimer(value)
 
     @property
@@ -88,7 +85,6 @@ class Sat_Model(nn.Module):
     
     @epoch_timer.setter
     def epoch_timer(self, value: bool):
-      warnings.warn(f'epoch timer: {value}')
       self._epoch_timer = CodeTimer(value)
 
     def activate_timing(self, activate: bool):
@@ -123,7 +119,6 @@ class Sat_Model(nn.Module):
       devices = ["cpu", "cuda"]
       if device not in devices:
           raise ValueError("device must be one of the following types:" + devices)
-      warnings.warn(f'using device: {device}')
       self._device = device
       self = self.to(device)
 
@@ -156,6 +151,8 @@ class Sat_Model(nn.Module):
 
     def notify_observers(self, key=None):
       state = self.outer_state.get()
+      metrics = self.observer_results()
+      state["metrics"] = metrics
       observers = merge_list_2d(self.observers.values()) if not key else self.observers[key]
       for obs in observers:
         if self.outer_state.state == obs.when or not obs.when:
@@ -235,16 +232,5 @@ class Sat_Model(nn.Module):
         self.one_epoch()
         self.evaluate()
         if self.scheduler: self.scheduler.step()
-        self.print_state()
-        self.notify_observers("after_step")
+        self.notify_observers("after_epoch")
         self.reset_observers()
-
-    ################### OTHER #############################
-
-    def print_state(self):
-      metrics = self.observer_results()
-      print(f"epoch : {self.outer_state.epoch}")
-      pprint(metrics)
-      print("*******")
-
-   

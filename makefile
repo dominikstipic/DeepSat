@@ -1,7 +1,7 @@
 PIPELINE_REPOSITORY="repository"
-DATASET_DIR="data/AerialImageDataset"
+DATASET_DIR="data"
 
-build: requirements dvc structure
+build: requirements pull structure
 
 auth:
 	dvc remote modify drive gdrive_use_service_account true

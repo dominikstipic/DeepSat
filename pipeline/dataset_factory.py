@@ -54,9 +54,11 @@ def _save_splits_in_csv(pipeline_stage_name: str, train_shard_paths: list, valid
     valid_paths = list(filter(lambda path: Path(path).stem.startswith("img"), valid_paths))
     test_paths = list(filter(lambda path: Path(path).stem.startswith("img"), test_paths))
 
-    pipeline_repository.push_csv(pipeline_stage_name, "splits.csv", csv_header=["example", "split"], data=train_paths, default_dir="artifacts", write_function=write_function("train"), append=False)
-    pipeline_repository.push_csv(pipeline_stage_name, "splits.csv", csv_header=["example", "split"], data=valid_paths, default_dir="artifacts", write_function=write_function("valid"), append=True)
-    pipeline_repository.push_csv(pipeline_stage_name, "splits.csv", csv_header=["example", "split"], data=test_paths,  default_dir="artifacts", write_function=write_function("test"),  append=True)
+    dir_path = Path(pipeline_stage_name) / "artifacts"
+    csv_name = "splits.csv"
+    pipeline_repository.push_csv(dir_path, csv_name, csv_header=["example", "split"], data=train_paths, write_function=write_function("train"), append=False)
+    pipeline_repository.push_csv(dir_path, csv_name, csv_header=["example", "split"], data=valid_paths, write_function=write_function("valid"), append=True)
+    pipeline_repository.push_csv(dir_path, csv_name, csv_header=["example", "split"], data=test_paths,  write_function=write_function("test"),  append=True)
     return train_paths, valid_paths, test_paths
 
 def _h_concatenate_images(img1: Image, img2: Image):
@@ -95,10 +97,10 @@ def _save_transformed_images(pipeline_stage_name: str, samples: int, train_paths
     test_examples  = [_h_concatenate_images(img, transf_img) for img, transf_img in list(zip(test_examples, test_transf_examples))]
 
     root_dir = Path(pipeline_stage_name) / "artifacts" / "transformations"
-    _ = pipeline_repository.create_dir(root_dir)
-    train_dir = pipeline_repository.create_dir(root_dir / "train")
-    valid_dir = pipeline_repository.create_dir(root_dir / "valid")
-    test_dir = pipeline_repository.create_dir(root_dir / "test")
+    _ = pipeline_repository.create_dir_if_not_exist(root_dir)
+    train_dir = pipeline_repository.create_dir_if_not_exist(root_dir / "train")
+    valid_dir = pipeline_repository.create_dir_if_not_exist(root_dir / "valid")
+    test_dir = pipeline_repository.create_dir_if_not_exist(root_dir / "test")
 
     pipeline_repository.push_images(train_dir, train_examples, train_names)
     pipeline_repository.push_images(valid_dir, valid_examples, valid_names)
