@@ -5,10 +5,16 @@ import pytz
 from pathlib import Path
 import tarfile
 import pickle
+from PIL import Image
 
-def create_dir_if_not_exist(path: Path):
-  if not path.exists():
-    path.mkdir()
+import numpy as np 
+import cv2
+
+def current_time():
+  tz = pytz.timezone('CET')
+  now = datetime.now(tz)
+  current_time = now.strftime("%d|%m|%y, %H:%M:%S")
+  return current_time
 
 def merge_list_dicts(dicts: list) -> dict:
   d = {}
@@ -16,6 +22,10 @@ def merge_list_dicts(dicts: list) -> dict:
     for k,v in di.items():
       d[k] = v
   return d
+
+def merge_list_2d(xss: list) -> list:
+  merged = list(itertools.chain(*xss))
+  return merged
   
 def read_json(path: Path) -> dict:
   if not path.exists:
@@ -28,15 +38,6 @@ def write_json(data: dict, path: Path):
   with open(str(path), 'w') as fp:
     json.dump(data, fp, indent=4)
 
-def current_time():
-  tz = pytz.timezone('CET')
-  now = datetime.now(tz)
-  current_time = now.strftime("%d|%m|%y, %H:%M:%S")
-  return current_time
-
-def merge_list_2d(xss: list) -> list:
-  merged = list(itertools.chain(*xss))
-  return merged
 
 def unpack_tar_archive_for_paths(tar_path: Path) -> list:
   with tarfile.open(tar_path, "r:gz") as tar: 
@@ -56,3 +57,11 @@ def load_pickle(path: Path) -> pickle:
   with open(str(path), "rb") as fp: 
     pickle_object = pickle.load(fp)
   return pickle_object
+
+def h_concatenate_images(img1, img2, is_pil=True):
+  img1, img2 = np.array(img1), np.array(img2)
+  img1 = cv2.copyMakeBorder(img1, 0, 0, 0, 10, cv2.BORDER_CONSTANT, None, value = 0)
+  img = cv2.hconcat((np.array(img1), np.array(img2)))
+  if is_pil:
+    img = Image.fromarray(img )
+  return img
