@@ -3,8 +3,7 @@ import csv
 import os
 import tarfile
 import pickle
-
-import cv2
+import torch
 
 from src.datasets.tar_dataset import IDENTITY
 from src.utils import common
@@ -12,6 +11,12 @@ from src.utils.common import load_pickle, save_pickle
 
 PIPELINE_REPO = Path("repository")
 IDENTITY = lambda x : x
+
+CSV_EXT = "csv"
+JSON_EXT = "json"
+PICKLE_EXT = "pickle"
+PNG_EXT = "png"
+PT_EXT = "pt"
 
 def get_path(str_path: str) -> Path:
     str_path = str(str_path)
@@ -25,12 +30,16 @@ def create_dir_if_not_exist(root_dir: Path) -> Path:
         os.makedirs(str(root_dir), exist_ok=True)
     return root_dir
 
+def _append_extension(name, ext):
+    name = str(name)
+    return f"{name}.{ext}" if not name.endswith(ext) else name
+
 ##########################3
 
 def push_csv(dir_path: Path, name: str, csv_header: list, data, append=False, write_function=IDENTITY) -> None:
     dir_path = get_path(dir_path)
     create_dir_if_not_exist(dir_path)
-    name = name + ".csv" if not name.endswith(".csv") else name
+    name = _append_extension(name, CSV_EXT)
     out_path = dir_path / name 
     flag = "w" if not append else "a" 
     with open(out_path, flag) as csvfile: 
@@ -47,7 +56,8 @@ def push_images(artifact_home_dir: Path, images: list, names=None):
         artifact_home_dir=create_dir_if_not_exist(artifact_home_dir)
     iter_list = enumerate(images) if not names else zip(names, images)
     for img_name, img in iter_list:
-        img_path = artifact_home_dir / f"{img_name}.png"
+        img_name = _append_extension(img_name, PNG_EXT)
+        img_path = artifact_home_dir / img_name
         img.save(str(img_path))
 
 
@@ -68,14 +78,14 @@ def push_as_tar(input_file_paths: list, tar_output_path: Path) -> None:
 
 def push_pickled_obj(pipeline_stage_name: str, pickle_dir: Path, pickle_object, pickle_name) -> Path:
     out_path = create_dir_if_not_exist(Path(pipeline_stage_name) / pickle_dir)
-    out_path = out_path / f"{pickle_name}.pickle"
+    pickle_name = _append_extension(pickle_name, PICKLE_EXT)
+    out_path = out_path / pickle_name
     save_pickle(out_path, pickle_object)
     return out_path
 
 def push_json(path_dir: Path, name: str, dictionary: dict):
     path_dir = get_path(path_dir)
-
-    name = f"{name}.json" if not name.endswith(".json") else name
+    name = _append_extension(name, JSON_EXT)
     path = create_dir_if_not_exist(path_dir) / name
     common.write_json(dictionary, path)
 
@@ -85,20 +95,34 @@ def get_obj_paths(pipeline_stage_name: str, root_dir: Path):
     path = get_path(Path(pipeline_stage_name) / root_dir)
     return list(path.iterdir())
 
-
-############################################
-
-def get_object(repo_path: Path) -> pickle:
+def get_pickle(repo_path: Path) -> pickle:
     path = get_path(Path(repo_path))
     pickle_obj = load_pickle(path)
     return pickle_obj
 
-def get_objects_from_repo(repo_dir: Path) -> dict:
+############################################
+
+def _read_file(path: Path):
+    path = str(path)
+    endswith = lambda ext: path.endswith(ext)
+    if endswith(PICKLE_EXT):
+        obj = get_pickle(path)
+    elif endswith(JSON_EXT):
+        obj = common.read_json(Path(path))
+    elif endswith(CSV_EXT):
+        pass
+    elif endswith(PT_EXT):
+        obj = torch.load(path)
+    else:
+        raise RuntimeError("unknown file extension")
+    return obj
+
+def get_objects(repo_dir: Path) -> dict:
     path = get_path(Path(repo_dir))
     path = create_dir_if_not_exist(path)
     result_dict = {}
     for obj_path in path.iterdir():
-        pickle_obj = get_object(obj_path)
-        result_dict[obj_path.stem] = pickle_obj
+        obj = _read_file(obj_path)
+        result_dict[obj_path.stem] = obj
     return result_dict
 
