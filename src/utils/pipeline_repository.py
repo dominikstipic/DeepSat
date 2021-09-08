@@ -4,6 +4,8 @@ import os
 import tarfile
 import pickle
 
+import cv2
+
 from src.datasets.tar_dataset import IDENTITY
 from src.utils import common
 from src.utils.common import load_pickle, save_pickle
@@ -39,12 +41,15 @@ def push_csv(dir_path: Path, name: str, csv_header: list, data, append=False, wr
             to_write = write_function(example)
             csvwriter.writerow(to_write)
 
-def push_images(artifact_home_dir: Path, images: list, names: list):
+
+def push_images(artifact_home_dir: Path, images: list, names=None):
     if not artifact_home_dir.exists(): 
         artifact_home_dir=create_dir_if_not_exist(artifact_home_dir)
-    for img_name, img in zip(names, images):
-        img_path = artifact_home_dir / img_name 
+    iter_list = enumerate(images) if not names else zip(names, images)
+    for img_name, img in iter_list:
+        img_path = artifact_home_dir / f"{img_name}.png"
         img.save(str(img_path))
+
 
 def push_as_tar(input_file_paths: list, tar_output_path: Path) -> None:
     global PIPELINE_REPO

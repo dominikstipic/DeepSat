@@ -7,6 +7,7 @@ from src.utils.common import merge_list_2d, unpack_tar_archive_for_paths
 import src.utils.hashes as hashes
 from src.transforms.transforms import Compose
 import src.utils.pipeline_repository as pipeline_repository
+import src.utils.common as common
 
 def _classify_example(path: Path, train_ratio: float, valid_ratio: float, scale=100):
     digit = hashes.from_string(str(path), scale)
@@ -61,13 +62,6 @@ def _save_splits_in_csv(pipeline_stage_name: str, train_shard_paths: list, valid
     pipeline_repository.push_csv(dir_path, csv_name, csv_header=["example", "split"], data=test_paths,  write_function=write_function("test"),  append=True)
     return train_paths, valid_paths, test_paths
 
-def _h_concatenate_images(img1: Image, img2: Image):
-    img1, img2 = np.array(img1), np.array(img2)
-    img1 = cv2.copyMakeBorder(img1, 0, 0, 0, 10, cv2.BORDER_CONSTANT, None, value = 0)
-    img = cv2.hconcat((np.array(img1), np.array(img2)))
-    pil_image = Image.fromarray(img )
-    return pil_image
-
 def _save_transformed_images(pipeline_stage_name: str, samples: int, train_paths: list, valid_paths: list, test_paths: list, train_transf: Compose, test_transf: Compose):
     train_examples, train_names = _sample_images_from_splits(train_paths, samples)
     valid_examples, valid_names = _sample_images_from_splits(valid_paths, samples)
@@ -92,9 +86,9 @@ def _save_transformed_images(pipeline_stage_name: str, samples: int, train_paths
     valid_transf_examples = list(map(lambda img: multiply_points(img), valid_transf_examples))
     test_transf_examples  = list(map(lambda img: multiply_points(img), test_transf_examples))
 
-    train_examples = [_h_concatenate_images(img, transf_img) for img, transf_img in list(zip(train_examples, train_transf_examples))]
-    valid_examples = [_h_concatenate_images(img, transf_img) for img, transf_img in list(zip(valid_examples, valid_transf_examples))]
-    test_examples  = [_h_concatenate_images(img, transf_img) for img, transf_img in list(zip(test_examples, test_transf_examples))]
+    train_examples = [common._h_concatenate_images(img, transf_img) for img, transf_img in list(zip(train_examples, train_transf_examples))]
+    valid_examples = [common._h_concatenate_images(img, transf_img) for img, transf_img in list(zip(valid_examples, valid_transf_examples))]
+    test_examples  = [common._h_concatenate_images(img, transf_img) for img, transf_img in list(zip(test_examples, test_transf_examples))]
 
     root_dir = Path(pipeline_stage_name) / "artifacts" / "transformations"
     _ = pipeline_repository.create_dir_if_not_exist(root_dir)
