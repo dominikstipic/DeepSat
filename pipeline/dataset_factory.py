@@ -86,9 +86,9 @@ def _save_transformed_images(pipeline_stage_name: str, samples: int, train_paths
     valid_transf_examples = list(map(lambda img: multiply_points(img), valid_transf_examples))
     test_transf_examples  = list(map(lambda img: multiply_points(img), test_transf_examples))
 
-    train_examples = [common._h_concatenate_images(img, transf_img) for img, transf_img in list(zip(train_examples, train_transf_examples))]
-    valid_examples = [common._h_concatenate_images(img, transf_img) for img, transf_img in list(zip(valid_examples, valid_transf_examples))]
-    test_examples  = [common._h_concatenate_images(img, transf_img) for img, transf_img in list(zip(test_examples, test_transf_examples))]
+    train_examples = [common.h_concatenate_images(img, transf_img) for img, transf_img in list(zip(train_examples, train_transf_examples))]
+    valid_examples = [common.h_concatenate_images(img, transf_img) for img, transf_img in list(zip(valid_examples, valid_transf_examples))]
+    test_examples  = [common.h_concatenate_images(img, transf_img) for img, transf_img in list(zip(test_examples, test_transf_examples))]
 
     root_dir = Path(pipeline_stage_name) / "artifacts" / "transformations"
     _ = pipeline_repository.create_dir_if_not_exist(root_dir)

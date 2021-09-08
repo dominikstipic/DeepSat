@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 repository/*
+reports/*
 todo 
 .dvc/service.json
 runner.bash

@@ -13,7 +13,7 @@ import cv2
 def current_time():
   tz = pytz.timezone('CET')
   now = datetime.now(tz)
-  current_time = now.strftime("%d|%m|%y, %H:%M:%S")
+  current_time = now.strftime("%H:%M %d-%m-%y")
   return current_time
 
 def merge_list_dicts(dicts: list) -> dict:
@@ -28,8 +28,8 @@ def merge_list_2d(xss: list) -> list:
   return merged
   
 def read_json(path: Path) -> dict:
-  if not path.exists:
-    raise FileNotFoundError(f"Json: {path} doesn't exist")
+  if not path.exists():
+    return None
   with open(str(path), "r") as json_file:
     json_dict = json.load(json_file)
   return json_dict
@@ -37,7 +37,6 @@ def read_json(path: Path) -> dict:
 def write_json(data: dict, path: Path):
   with open(str(path), 'w') as fp:
     json.dump(data, fp, indent=4)
-
 
 def unpack_tar_archive_for_paths(tar_path: Path) -> list:
   with tarfile.open(tar_path, "r:gz") as tar: 

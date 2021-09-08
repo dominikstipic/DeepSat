@@ -41,6 +41,7 @@ def prepare_pip_arguments(config_args: dict) -> dict:
 
 if __name__ == "__main__":
     args = shared_logic.get_pipeline_stage_args(FILE_NAME)
+    shared_logic.save_args(FILE_NAME)
     shared_logic.log_arguments(FILE_NAME, args)
     processed_args = prepare_pip_arguments(args)
     dataset_factory.process(**processed_args)
