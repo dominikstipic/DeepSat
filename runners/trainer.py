@@ -12,9 +12,7 @@ INPUT  = Path("dataset_factory/output") # TODO
 OUTPUT = Path(f"{FILE_NAME}/output") 
 
 def _get_datasets(input_path: Path):
-    stage_name = input_path.parts[0]
-    repo_path  = Path("/".join(input_path.parts[1:]))
-    previous_stage_obj_dict = pipeline_repository.get_objects_from_repo(Path(stage_name) / repo_path)
+    previous_stage_obj_dict = pipeline_repository.get_objects(input_path)
     train_db, valid_db = previous_stage_obj_dict["train_db"], previous_stage_obj_dict["valid_db"]
     return dict(train_db=train_db, valid_db=valid_db)
 
@@ -51,6 +49,7 @@ def prepare_pip_arguments(config_args: dict):
 
 if __name__ == "__main__":
     args = shared_logic.get_pipeline_stage_args(FILE_NAME)
+    shared_logic.save_args(FILE_NAME)
     shared_logic.log_arguments(FILE_NAME, args)
     processed_args = prepare_pip_arguments(args)
     trainer.process(**processed_args)
