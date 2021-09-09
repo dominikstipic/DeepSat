@@ -17,18 +17,18 @@ PIPELINE = [
     "trainer",
     "evaluation"
 ]
-
 _CONFIG_PATH = Path("config.json")
 _EMAIL_PATH  = Path("email.json")
-
 REPOSITORY_PATH = pipeline_repository.get_path("")
 REPORT_PATH = Path("reports")
-
 META_JSON = "runned_with.json"
+#####################################
 
 def cmi_parse() -> tuple:
     parser = argparse.ArgumentParser(description="DeepSat pipeline executor")
     parser.add_argument("--do_report", dest="do_report", action="store_true", help="Generate pipeline report and save it to a report repository")
+    parser.add_argument("--do_email", dest="do_email", action="store_true", help="Send the report to the specified receiver email")
+    parser.add_argument("--do_version", dest="do_version", action="store_true", help="Version reports with dvc")
     args = vars(parser.parse_args())
     args["pipeline_stages"] = PIPELINE
     return args
@@ -46,7 +46,7 @@ def send_email(config: dict, eval: dict, time: int, **kwargs):
     yagmail.SMTP(email_dict["email"]).send(email_dict["receiver"], email_dict["subject"], contents)
 
 def version_report():
-    pass
+    os.system("bash scripts/add_report.bash")
 
 def get_config():
     config_dict = common.read_json(_CONFIG_PATH)
@@ -77,7 +77,7 @@ def run_stage(stage):
     cmd = get_cmd(stage)
     os.system(cmd)
 
-def process(pipeline_stages: list, do_report: bool):
+def process(pipeline_stages: list, do_report: bool, do_version: bool, do_email: bool):
     config = get_config()
     flag = True
     start = time.perf_counter_ns()
@@ -98,8 +98,8 @@ def process(pipeline_stages: list, do_report: bool):
     if do_report:
         report = generate_report()
         report["time"] = time_min
-        send_email(**report)
-        version_report()
+        if do_email: send_email(**report)
+        if do_version: version_report()
 
 if __name__ == "__main__":
     args = cmi_parse()
