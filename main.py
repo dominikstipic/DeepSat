@@ -1,8 +1,11 @@
 import os
 from pathlib import Path
 from src.utils import common
+import argparse
+import time
 
 import torch
+import yagmail
 
 import src.utils.pipeline_repository as pipeline_repository
 
@@ -16,16 +19,38 @@ PIPELINE = [
 ]
 
 _CONFIG_PATH = Path("config.json")
+_EMAIL_PATH  = Path("email.json")
 
 REPOSITORY_PATH = pipeline_repository.get_path("")
 REPORT_PATH = Path("reports")
 
 META_JSON = "runned_with.json"
 
+def cmi_parse() -> tuple:
+    parser = argparse.ArgumentParser(description="DeepSat pipeline executor")
+    parser.add_argument("--do_report", dest="do_report", action="store_true", help="Generate pipeline report and save it to a report repository")
+    args = vars(parser.parse_args())
+    args["pipeline_stages"] = PIPELINE
+    return args
+
+def send_email(config: dict, eval: dict, time: int, **kwargs):
+    email_dict = common.read_json(_EMAIL_PATH)
+    yagmail.register(email_dict["email"], email_dict["pass"])
+    results = eval["metrics"]
+    results["time"] = f"{time} min" 
+    contents = [
+        results,
+        "###########################################", 
+        config
+    ]
+    yagmail.SMTP(email_dict["email"]).send(email_dict["receiver"], email_dict["subject"], contents)
+
+def version_report():
+    pass
+
 def get_config():
     config_dict = common.read_json(_CONFIG_PATH)
     return config_dict
-
 
 def generate_report():
     time = common.current_time()
@@ -43,15 +68,20 @@ def generate_report():
     common.save_pickle(str(root_dir / "model.pickle"), model)
     common.write_json(eval_out, root_dir / "eval.json")
     common.write_json(config_dict, root_dir / "config.json")
+    
+    report = dict(weights=weights, model=model, eval=eval_out, config=config_dict)
+    return report
 
 def run_stage(stage):
     get_cmd = lambda stage: f"python -m runners.{stage}" 
     cmd = get_cmd(stage)
     os.system(cmd)
 
-def process(pipeline_stages: list):
+def process(pipeline_stages: list, do_report: bool):
     config = get_config()
     flag = True
+    start = time.perf_counter_ns()
+    to_min = lambda t : t / 1000 / 1000 / 60
     for stage_name in pipeline_stages:
         pip_stage_path = pipeline_repository.get_path(stage_name)
         runned_with_path = pip_stage_path / META_JSON
@@ -62,7 +92,16 @@ def process(pipeline_stages: list):
             run_stage(stage_name)
         else:
             print(f"SKIPPING: {stage_name}")
-    generate_report()
+    end = time.perf_counter_ns()
+    time_min = to_min(end-start)
+    print(f"TOTAL TIME: {time_min}")
+    if do_report:
+        report = generate_report()
+        report["time"] = time_min
+        send_email(**report)
+        version_report()
 
 if __name__ == "__main__":
-    process(PIPELINE)
+    args = cmi_parse()
+    print(args)
+    process(**args)

@@ -1,7 +1,5 @@
 from pathlib import Path
 from PIL import Image
-import cv2
-import numpy as np
 
 from src.utils.common import merge_list_2d, unpack_tar_archive_for_paths
 import src.utils.hashes as hashes
