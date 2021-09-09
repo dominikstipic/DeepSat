@@ -9,6 +9,7 @@ todo
 .dvc/service.json
 runner.bash
 config.json
+email.json
 
 # C extensions
 *.so
