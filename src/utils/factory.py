@@ -4,7 +4,6 @@ from importlib import import_module
 from .compiler import config_compiler as config_compiler
 from .compiler import actions as actions
 
-
 def get_object_from_standard_name(std_name: str):
     pckg_parts = std_name.split(".")
     pckg_name, cls_name = ".".join(pckg_parts[:-1]), pckg_parts[-1]

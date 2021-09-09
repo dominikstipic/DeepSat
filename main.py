@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from src.utils import common
+from src.utils import common, hashes
 import argparse
 import time
 
@@ -50,6 +50,8 @@ def version_report():
 
 def get_config():
     config_dict = common.read_json(_CONFIG_PATH)
+    data_hash = hashes.current_data_hash()
+    config_dict["preprocess"]["data_hash"] = data_hash
     return config_dict
 
 def generate_report():
