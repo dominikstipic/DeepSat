@@ -1,8 +1,13 @@
 import hashlib
 import random
-"""
-    Hash functions which give reproducible results
-"""
+
+from pathlib import Path
+
+def current_data_hash():
+    paths = [str(p) for p in Path("data").iterdir()]
+    path_strs = " ".join(paths)
+    hex = hashlib.md5(path_strs.encode()).hexdigest()
+    return hex
 
 def random_shuffle(str_list: list):
     data  = " ".join(str_list)
@@ -10,7 +15,6 @@ def random_shuffle(str_list: list):
     random.seed(digit)
     random.shuffle(str_list) 
     return str_list
-
 
 def from_string(data: str, scale: int) -> int:
     hash_object = hashlib.md5(data.encode()).hexdigest()
