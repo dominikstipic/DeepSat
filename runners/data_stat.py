@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 
 from . import shared_logic as shared_logic
 import pipeline.data_stat as data_stat
