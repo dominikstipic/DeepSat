@@ -16,6 +16,8 @@ push: auth
 
 structure:
 	mkdir -p $(PIPELINE_REPOSITORY)
+	mkdir -p $(DATASET_DIR)
+	mkdir -p $(REPORT_DIR)
 
 requirements: 
 	pip install -r requirements.txt
