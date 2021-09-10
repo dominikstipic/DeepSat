@@ -8,7 +8,7 @@ import src.observers.metrics as metrics
 import pipeline.trainer as trainer
 
 FILE_NAME = Path(__file__).stem
-INPUT  = Path("dataset_factory/output") # TODO
+INPUT  = Path("dataset_factory/output")
 OUTPUT = Path(f"{FILE_NAME}/output") 
 
 def _get_datasets(input_path: Path):

@@ -7,8 +7,10 @@ repository/*
 reports/*
 todo 
 .dvc/service.json
+.dvc/secret.json
 runner.bash
 config.json
+email.json
 
 # C extensions
 *.so

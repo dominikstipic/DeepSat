@@ -47,17 +47,17 @@
 
 		"test_ratio": 0.3, 
 		"valid_ratio": 0.1, 
-		"viz_samples": 5
+		"viz_samples": 3
 	},
 
 	"data_stat": {
-		"viz_samples": 3
+		"viz_samples": 7
 	},
 
 	"trainer" : {
 		"amp": false,
-		"epochs": 5, 
-		"device": "cuda",
+		"epochs": 0, 
+		"device": "cpu",
 		"model": {
 			"src.models.piramid_swiftnet.model.PiramidSwiftnet": {
 				"num_classes": 2
@@ -150,4 +150,6 @@
 				}
 			}
 	}
+
+	
 }

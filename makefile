@@ -1,5 +1,6 @@
 PIPELINE_REPOSITORY="repository"
 DATASET_DIR="data"
+REPORT_DIR="reports"
 
 build: requirements pull structure
 
@@ -22,3 +23,4 @@ requirements:
 clean:
 	rm -r $(PIPELINE_REPOSITORY)
 	rm -r $(DATASET_DIR)
+	rm -r $(REPORT_DIR)

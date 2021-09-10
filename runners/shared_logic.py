@@ -1,3 +1,4 @@
+from src.utils import hashes
 import sys
 from pathlib import Path
 import logging
@@ -8,6 +9,8 @@ import src.utils.compiler.config_compiler as config_compiler
 import src.utils.compiler.actions as config_actions
 from src.utils.common import read_json
 import src.utils.pipeline_repository as pipeline_repository
+import src.utils.hashes as hashes
+
 
 JSON_PATH = Path("config.json")
 
@@ -29,8 +32,10 @@ def log_arguments(file_name, args):
     logger = logging.getLogger(file_name)
     logger.info(f"{os.path.basename(file_name)} script was run with following arguments: {args}")
 
-def save_args(stage_name: str):
+def save_args(stage_name: str, preprocess=False):
     args = get_pipeline_stage_args(stage_name, compile=False)
+    if preprocess:
+        args["data_hash"] = hashes.current_data_hash()
     stage_name = Path(stage_name) 
     name = "runned_with.json"
     pipeline_repository.push_json(stage_name, name, args)
