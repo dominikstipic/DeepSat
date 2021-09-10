@@ -3,6 +3,7 @@ from pathlib import Path
 from src.utils import common, hashes
 import argparse
 import time
+import sys
 
 import torch
 import yagmail
@@ -94,7 +95,11 @@ def process(pipeline_stages: list, do_report: bool, do_version: bool, do_email: 
         if runned_with == None or config[stage_name] != runned_with or not flag:
             print(f"RUNNING: {stage_name}")
             flag = False
-            run_stage(stage_name)
+            try:
+                run_stage(stage_name)
+            except Exception:
+                print(f"stage failed: {stage_name}")
+                sys.exit(1)
         else:
             print(f"SKIPPING: {stage_name}")
     end = time.perf_counter_ns()
