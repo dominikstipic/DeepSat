@@ -17,6 +17,7 @@ PIPELINE = [
     "trainer",
     "evaluation"
 ]
+_DATA_PATH = Path("data")
 _CONFIG_PATH = Path("config.json")
 _EMAIL_PATH  = Path("email.json")
 REPOSITORY_PATH = pipeline_repository.get_path("")
@@ -84,6 +85,8 @@ def process(pipeline_stages: list, do_report: bool, do_version: bool, do_email: 
     flag = True
     start = time.perf_counter_ns()
     to_min = lambda t : t / 1000 / 1000 / 60
+    if not _DATA_PATH.exists() or len(list(_DATA_PATH.iterdir())) == 0:
+        raise RuntimeError("cannot find dataset on which system will learn")
     for stage_name in pipeline_stages:
         pip_stage_path = pipeline_repository.get_path(stage_name)
         runned_with_path = pip_stage_path / META_JSON
