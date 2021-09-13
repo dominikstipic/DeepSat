@@ -2,7 +2,7 @@ PIPELINE_REPOSITORY="repository"
 DATASET_DIR="data"
 REPORT_DIR="reports"
 
-build: requirements pull structure
+build: requirements structure
 
 auth:
 	dvc remote modify drive gdrive_use_service_account true
