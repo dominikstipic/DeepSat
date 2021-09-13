@@ -48,7 +48,7 @@ def send_email(config: dict, eval: dict, time: int, **kwargs):
     yagmail.SMTP(email_dict["email"]).send(email_dict["receiver"], email_dict["subject"], contents)
 
 def version_report():
-    os.system("bash scripts/add_reports.bash")
+    os.system("bash devops/add_reports.bash")
 
 def get_config():
     config_dict = common.read_json(_CONFIG_PATH)
