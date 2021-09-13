@@ -1,8 +1,10 @@
 from pprint import pprint
 import functools
+from pathlib import Path 
 
 import numpy as np
 import torch
+from torchvision.transforms.functional import to_pil_image
 
 import src.utils.pipeline_repository as pipeline_repository
 
@@ -149,7 +151,7 @@ class _EarlyStopperError(Exception):
         super().__init__(self.message)
 
 class EarlyStoper(Subscriber):
-    def __init__(self, lookback, when="TEST"):
+    def __init__(self, lookback, when=None):
         Subscriber.__init__(self, when)
         assert lookback >= 2, "lookback parameter must be greater than 2"
         self.lookback = lookback
@@ -175,4 +177,21 @@ class EarlyStoper(Subscriber):
         if value:
             raise _EarlyStopperError(f"Early stoping at epoch {len(self.losses)}")
 
+##################################################
+
+class PredictionSaver(Subscriber):
+    def __init__(self, path: str, period: int, when=None):
+        Subscriber.__init__(self, when)
+        self.path = Path(path)
+        self.period = period
+    
+    def update(self, prediction, iteration, **kwargs):
+        if iteration % self.period != 0:
+            return
+        dir_name = Path("evaluation/artifacts")
+        dir_name = pipeline_repository.create_dir_if_not_exist(dir_name)    
+        for one_image in prediction:
+            pil = to_pil_image(one_image.float())
+            img_path = dir_name / f"{iteration}.png"
+            pil.save(img_path)
 
