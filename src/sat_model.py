@@ -37,10 +37,10 @@ class Sat_Model(nn.Module):
       self.loss_function = None
       
       self.observers = {
-        "after_epoch": [], 
+        "after_epoch" : [], 
         "before_epoch": [],
-        "after_step": [], 
-        "before_step": []
+        "after_step"  : [], 
+        "before_step" : []
       }
 
       # State which model exposes to the environment = (observers, user)

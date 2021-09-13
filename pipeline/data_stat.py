@@ -10,8 +10,11 @@ import src.utils.pipeline_repository as pipeline_repository
 FILE_NAME = Path(__file__).stem
 
 def sample_images(dataset, k: int, function=lambda x: x):
-    it = iter(dataset)
-    examples = [function(next(it)) for _ in range(k)]
+    examples = []
+    for i, img in enumerate(dataset):
+        if i >= k: break
+        x = function(img)
+        examples.append(x)
     return examples
 
 #########################
@@ -48,7 +51,6 @@ def dataset_statistics(dataset):
     calc_mean = lambda xs: xs[0].view(3,-1).mean(1)
     calc_std  = lambda xs: xs[0].view(3,-1).std(1)
     aggregate = lambda xs: torch.stack(xs).mean(0).tolist()
-
     means = sample_images(dataset, len(dataset), calc_mean)
     means = aggregate(means)
     stds = sample_images(dataset, len(dataset), calc_std)
