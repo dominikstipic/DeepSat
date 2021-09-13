@@ -7,7 +7,12 @@ FILE_NAME = Path(__file__).stem
 _MODEL_NAME = "model.pickle"
 _WEIGHTS_NAME = "weights.pt"
 
-
+def get_model():
+    model_dict = pipeline_repository.get_objects("trainer/output")
+    model, weights = model_dict["model"], model_dict["weights"]
+    model.load_state_dict(torch.load(weights))
+    return model
+    
 def process(epochs: int, amp: bool, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, output_dir: Path):
     model.optimizer = optimizer
     model.scheduler = lr_scheduler
