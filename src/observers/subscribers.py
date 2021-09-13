@@ -114,7 +114,7 @@ class MetricSaver(Subscriber):
     def __init__(self, path: str, when=None):
         Subscriber.__init__(self, when)
         self.path = pipeline_repository.get_path(path)
-        self.name = "metrics.csv"
+        self.name = "metrics.csv" if not when else f"metrics-{when}.csv"
         self.first_write = True
 
     def update(self, metrics, epoch, **kwargs):
