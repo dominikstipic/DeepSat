@@ -25,9 +25,9 @@ def _create_dataloaders(dataloader_dict: dict, train_db, valid_db):
 def get_observers(observer_dict: dict): 
     results = {key:[] for key in observer_dict}
     for event_key, event_obs in copy.deepcopy(observer_dict).items():
-        for obs_name, obs_params in event_obs.items():
+        for obs_dict in event_obs:
             metrics_funs = metrics.METRIC_FUNS
-            obs = factory.import_object({obs_name:obs_params}, **metrics_funs)
+            obs = factory.import_object(obs_dict, **metrics_funs)
             results[event_key].append(obs)
     return results
 
