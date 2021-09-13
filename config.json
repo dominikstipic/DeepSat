@@ -26,7 +26,8 @@
 						"probability": 0.5
 					}
 				}, 
-				{"src.transforms.augmentations.Jitter" :{}
+				{
+         		 	"src.transforms.augmentations.Jitter" :{}
 				}
 			],
 			"test": "$dataset_factory.augmentations.train$"
@@ -56,7 +57,7 @@
 
 	"trainer" : {
 		"amp": false,
-		"epochs": 0, 
+		"epochs": 1, 
 		"device": "cpu",
 		"model": {
 			"src.models.piramid_swiftnet.model.PiramidSwiftnet": {
@@ -107,45 +108,66 @@
 		}
 		,
 		"observers":{
-			"after_epoch": {
-				"src.observers.subscribers.StdPrinter": {},
-				"src.observers.subscribers.MetricSaver": {
+			"after_epoch": [
+				{
+					"src.observers.subscribers.StdPrinter": {}
+				},
+				{
+					"src.observers.subscribers.MetricSaver": {
+					"when": "TEST",
 					"path": "trainer/artifacts"
-				}		
-			}, 
-			"after_step": {
-				"src.observers.subscribers.Confusion_Matrix": {
+					}
+				},
+				{
+					"src.observers.subscribers.MetricSaver": {
+					"when": "TRAIN",
+					"path": "trainer/artifacts"
+					}
+				}			
+			], 
+			"after_step": [
+				{
+					"src.observers.subscribers.Confusion_Matrix": {
 					"class_num": 2, 
 					"metrics": ["%accuracy%", "%precission%", "%recall%", "%mIoU%"]
+					}
 				}, 
-				"src.observers.subscribers.Running_Loss": {
+				{
+					"src.observers.subscribers.Running_Loss": {
 					"name": "train"
+					}
 				}
-			},
-			"before_step": {},
-			"before_epoch": {}
+			],
+			"before_step": [],
+			"before_epoch": []
 		}
 	},
 
 	"evaluation" : {
 		"device": "$trainer.device$",
 		"observers": {
-			"after_epoch": {}, 
-			"before_epoch": {}, 
-			"after_step": {
-				"src.observers.subscribers.Confusion_Matrix": {
-					"class_num": 2, 
-					"metrics": ["%accuracy%", "%precission%", "%recall%", "%mIoU%"]
+			"after_epoch": [], 
+			"before_epoch": [], 
+			"before_step": [],
+			"after_step": [
+				{
+					"src.observers.subscribers.Confusion_Matrix": {
+						"class_num": 2, 
+						"metrics": ["%accuracy%", "%precission%", "%recall%", "%mIoU%"]
+					}
 				}, 
-				"src.observers.subscribers.Running_Loss": {
-					"name": "train"
+				{
+					"src.observers.subscribers.Running_Loss": {
+						"name": "test"
+					}
 				}, 
-				"src.observers.subscribers.PredictionSaver": {
-					"path": "evaluation/artifacts/predictions", 
-					"period": 10
+				{
+					"src.observers.subscribers.PredictionSaver": {
+						"path": "evaluation/artifacts/predictions", 
+						"period": 10
+					}
 				}
-			},
-			"before_step": {}
+			]
 		},
 		"dataloader": {
 			"torch.utils.data.DataLoader" :{
