@@ -21,7 +21,7 @@ def cmi_parse() -> tuple:
     parser = argparse.ArgumentParser(description="A DeepSat project versioner")
     parser.add_argument("commit_type", type=str, choices=[DATA_TYPE, RUN_TYPE, CODE_TYPE], help="the type of commit")
     parser.add_argument("--message", type=str, default="", help="A optional message for commit")
-    parser.add_argument("--test", action="store_false", default=True, help="Test commit message")
+    parser.add_argument("--test", action="store_true", default=False, help="Test commit message")
     args = vars(parser.parse_args())
     return args
 
@@ -37,10 +37,10 @@ def dvc_add(type):
 def dvc_push():
     os.system(DVC_PUSH)
 
-def git_add_commit(type, commit_message):
-    if type == RUN_TYPE: 
-        git_add_cmd = f"git add report.dvc .gitignore"
-    elif type == DATA_TYPE: 
+def git_add_commit(commit_type, commit_message):
+    if commit_type == RUN_TYPE: 
+        git_add_cmd = f"git add reports.dvc .gitignore"
+    elif commit_type == DATA_TYPE: 
         git_add_cmd = f"git add data.dvc .gitignore"
     else:
         git_add_cmd = f"git add ."
@@ -69,8 +69,8 @@ def process(commit_type, message, test):
     data_hash = get_data_hash()
     commit_message = form_commit_message(commit_type, timestamp, data_hash, message)
     print(f"commit message: {commit_message}")
-    if test:
-        dvc_add(type)
+    if not test:
+        dvc_add(commit_type)
         dvc_push()
         git_add_commit(commit_type, commit_message)
         git_push()

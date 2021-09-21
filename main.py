@@ -51,7 +51,7 @@ def send_email(config: dict, eval: dict, time: int, **kwargs):
 
 def version_report():
     commit_type = "run" 
-    test = True
+    test = False
     message = ""
     commit.process(commit_type, message, test)
 
