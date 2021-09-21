@@ -4,6 +4,7 @@ import os
 import tarfile
 import pickle
 import torch
+import cv2
 
 from src.datasets.tar_dataset import IDENTITY
 from src.utils import common
@@ -113,6 +114,8 @@ def _read_file(path: Path):
         pass
     elif endswith(PT_EXT):
         obj = torch.load(path)
+    elif endswith(PNG_EXT):
+        obj = cv2.imread(path)
     else:
         raise RuntimeError("unknown file extension")
     return obj
@@ -122,7 +125,10 @@ def get_objects(repo_dir: Path) -> dict:
     path = create_dir_if_not_exist(path)
     result_dict = {}
     for obj_path in path.iterdir():
-        obj = _read_file(obj_path)
+        if obj_path.is_dir():
+            obj = [_read_file(p) for p in obj_path.iterdir()]
+        else: 
+            obj = _read_file(obj_path)
         result_dict[obj_path.stem] = obj
     return result_dict
 

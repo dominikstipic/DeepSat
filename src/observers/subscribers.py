@@ -188,7 +188,7 @@ class PredictionSaver(Subscriber):
     def update(self, prediction, iteration, **kwargs):
         if iteration % self.period != 0:
             return
-        dir_name = Path("evaluation/artifacts")
+        dir_name = Path("evaluation/artifacts/predictions")
         dir_name = pipeline_repository.create_dir_if_not_exist(dir_name)    
         for one_image in prediction:
             pil = to_pil_image(one_image.float())

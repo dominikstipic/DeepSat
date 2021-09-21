@@ -71,7 +71,7 @@ def generate_report():
     trainer_out = pipeline_repository.get_objects(trainer_path)
     weights, model = trainer_out["weights"], trainer_out["model"]
     eval_path = Path("evaluation/artifacts")
-    eval_out = pipeline_repository.get_objects(eval_path)
+    eval_out = pipeline_repository.get_objects(eval_path)["metrics"]
     config_dict = get_config()
 
     torch.save(weights, str(root_dir / 'weights.pt'))
