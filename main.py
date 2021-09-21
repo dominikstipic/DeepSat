@@ -9,6 +9,8 @@ import torch
 import yagmail
 
 import src.utils.pipeline_repository as pipeline_repository
+import devops.commit as commit
+
 
 PIPELINE = [
     "preprocess",
@@ -48,7 +50,10 @@ def send_email(config: dict, eval: dict, time: int, **kwargs):
     yagmail.SMTP(email_dict["email"]).send(email_dict["receiver"], email_dict["subject"], contents)
 
 def version_report():
-    os.system("bash devops/add_reports.bash")
+    commit_type = "run" 
+    test = True
+    message = ""
+    commit.process(commit_type, message, test)
 
 def get_config():
     config_dict = common.read_json(_CONFIG_PATH)
@@ -59,8 +64,9 @@ def get_config():
 def generate_report():
     time = common.current_time()
     root_dir = REPORT_PATH / time
-    if not root_dir.exists(): root_dir.mkdir()
-
+    if not root_dir.exists(): 
+        if not root_dir.parent.exists(): root_dir.parent.mkdir()
+        root_dir.mkdir()
     trainer_path = Path("trainer/output")
     trainer_out = pipeline_repository.get_objects(trainer_path)
     weights, model = trainer_out["weights"], trainer_out["model"]
