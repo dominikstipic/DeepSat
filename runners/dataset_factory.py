@@ -10,7 +10,7 @@ import src.utils.factory as factory
 import pipeline.dataset_factory as dataset_factory
 
 FILE_NAME = Path(__file__).stem
-INPUT  = Path("sharding/output") # TODO: What if I change sharding name
+INPUT  = Path("sharding/output")
 
 def _get_composite_transf(transformations: list) -> Compose: 
     transf_list = []
@@ -40,8 +40,6 @@ def prepare_pip_arguments(config_args: dict) -> dict:
     return d
 
 if __name__ == "__main__":
-    args = shared_logic.get_pipeline_stage_args(FILE_NAME)
-    shared_logic.save_args(FILE_NAME)
-    shared_logic.log_arguments(FILE_NAME, args)
+    args = shared_logic.prerun_routine(FILE_NAME)
     processed_args = prepare_pip_arguments(args)
     dataset_factory.process(**processed_args)

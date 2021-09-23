@@ -19,8 +19,6 @@ def prepare_pip_arguments(config_args: dict):
     return args
 
 if __name__ == "__main__":
-    args = shared_logic.get_pipeline_stage_args(FILE_NAME)
-    shared_logic.save_args(FILE_NAME)
-    shared_logic.log_arguments(FILE_NAME, args)
+    args = shared_logic.prerun_routine(FILE_NAME)
     processed_args = prepare_pip_arguments(args)
     data_stat.process(**processed_args)
