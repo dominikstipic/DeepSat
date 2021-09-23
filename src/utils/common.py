@@ -6,6 +6,8 @@ from pathlib import Path
 import tarfile
 import pickle
 from PIL import Image
+from collections import OrderedDict
+
 
 import numpy as np 
 import cv2
@@ -27,11 +29,11 @@ def merge_list_2d(xss: list) -> list:
   merged = list(itertools.chain(*xss))
   return merged
   
-def read_json(path: Path) -> dict:
+def read_json(path: Path, ordered_dict=False) -> dict:
   if not path.exists():
     return None
   with open(str(path), "r") as json_file:
-    json_dict = json.load(json_file)
+    json_dict = json.load(json_file) if not ordered_dict else json.load(json_file, object_pairs_hook=OrderedDict)
   return json_dict
 
 def write_json(data: dict, path: Path):
