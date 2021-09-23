@@ -5,6 +5,7 @@ import tarfile
 import pickle
 import torch
 import cv2
+import shutil
 
 from src.datasets.tar_dataset import IDENTITY
 from src.utils import common
@@ -18,6 +19,10 @@ JSON_EXT = "json"
 PICKLE_EXT = "pickle"
 PNG_EXT = "png"
 PT_EXT = "pt"
+
+def clean():
+    shutil.rmtree(PIPELINE_REPO)
+    PIPELINE_REPO.mkdir()
 
 def get_path(str_path: str) -> Path:
     str_path = str(str_path)
