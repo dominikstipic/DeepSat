@@ -11,7 +11,7 @@ todo
 runner.bash
 config.json
 email.json
-data/*
+data
 
 # C extensions
 *.so

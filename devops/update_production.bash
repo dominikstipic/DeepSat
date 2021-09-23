@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PATTERN="(__pycache__)|(.*\.git.*)|.*\.pytest_cache.*"
+PATTERN="(__pycache__)|./.git/*|.*\.pytest_cache.*|./repository/*|./tests/*|./data/*|./.dvc/*"
 files=($(find . -type f | egrep -v $PATTERN))
 
 git clone "git@github.com:dominikstipic/DeepSat-production.git"

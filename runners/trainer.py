@@ -34,6 +34,7 @@ def get_observers(observer_dict: dict):
 def prepare_pip_arguments(config_args: dict):
     global INPUT, OUTPUT
     args = {} 
+    import torch; torch.manual_seed(42)
     args["model"] = factory.import_object(config_args['model'])
     datasets_dict = _get_datasets(INPUT)
     args["loader_dict"] = _create_dataloaders(config_args["dataloader"], **datasets_dict)
@@ -44,7 +45,7 @@ def prepare_pip_arguments(config_args: dict):
     args["epochs"] = config_args["epochs"]
     args["device"] = config_args["device"]
     args["amp"] = config_args["amp"]
-    args["output_dir"] = OUTPUT 
+    args["output_dir"] = OUTPUT
     return args
 
 if __name__ == "__main__":

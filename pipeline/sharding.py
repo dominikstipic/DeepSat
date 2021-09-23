@@ -32,9 +32,8 @@ def process(shard_size: int, input_dir: Path, output_dir: Path) -> None:
     img_names = [get_example_name(name.stem) for name in file_paths]
     img_names = list(filter(lambda x : not x.endswith(f".{extension}"), img_names))
     img_names = hashes.random_shuffle(img_names)
-    img_names_paths = list(set([str(name) for name in img_names]))
+    img_names_paths = sorted(list(set([str(name) for name in img_names])))
     shard_nums = len(img_names_paths) // shard_size
-
     _save_surplus_files(shard_nums, output_dir, shard_size, img_names_paths, input_dir, extension)
     _save_other_files(shard_nums, output_dir, shard_size, img_names_paths, input_dir, extension)
 

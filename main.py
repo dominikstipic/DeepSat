@@ -11,17 +11,6 @@ import yagmail
 import src.utils.pipeline_repository as pipeline_repository
 import devops.commit as commit
 
-
-PIPELINE = [
-    "preprocess",
-    "sharding",
-    "dataset_factory",
-    "data_stat",
-    "trainer",
-    "evaluation"
-]
-_DATA_PATH = Path("data")
-_CONFIG_PATH = Path("config.json")
 _EMAIL_PATH  = Path("email.json")
 REPOSITORY_PATH = pipeline_repository.get_path("")
 REPORT_PATH = Path("reports")
@@ -33,8 +22,9 @@ def cmi_parse() -> tuple:
     parser.add_argument("--do_report", dest="do_report", action="store_true", help="Generate pipeline report and save it to a report repository")
     parser.add_argument("--do_email", dest="do_email", action="store_true", help="Send the report to the specified receiver email")
     parser.add_argument("--do_version", dest="do_version", action="store_true", help="Version reports with dvc")
+    parser.add_argument("--config_path", default="config.json", type=str, help="Path to the configuration path")
+    parser.add_argument("--data_path", default="data", type=str, help="Path to the dataset directory")
     args = vars(parser.parse_args())
-    args["pipeline_stages"] = PIPELINE
     return args
 
 def send_email(config: dict, eval: dict, time: int, **kwargs):
@@ -55,13 +45,14 @@ def version_report():
     message = ""
     commit.process(commit_type, message, test)
 
-def get_config():
-    config_dict = common.read_json(_CONFIG_PATH)
+def get_config(config_path: str):
+    config_dict = common.read_json(Path(config_path), ordered_dict=True)
     data_hash = hashes.current_data_hash()
-    config_dict["preprocess"]["data_hash"] = data_hash
+    if "preprocess" in config_dict.keys():
+        config_dict["preprocess"]["data_hash"] = data_hash
     return config_dict
 
-def generate_report():
+def generate_report(config_dict: dict):
     time = common.current_time()
     root_dir = REPORT_PATH / time
     if not root_dir.exists(): 
@@ -72,7 +63,6 @@ def generate_report():
     weights, model = trainer_out["weights"], trainer_out["model"]
     eval_path = Path("evaluation/artifacts")
     eval_out = pipeline_repository.get_objects(eval_path)["metrics"]
-    config_dict = get_config()
 
     torch.save(weights, str(root_dir / 'weights.pt'))
     common.save_pickle(str(root_dir / "model.pickle"), model)
@@ -87,12 +77,13 @@ def run_stage(stage):
     cmd = get_cmd(stage)
     os.system(cmd)
 
-def process(pipeline_stages: list, do_report: bool, do_version: bool, do_email: bool):
-    config = get_config()
+def process(do_report: bool, do_version: bool, do_email: bool, config_path: str, data_path: str):
+    config = get_config(config_path)
+    pipeline_stages = config.keys()
     flag = True
     start = time.perf_counter_ns()
     to_min = lambda t : t / 1000 / 1000 / 60
-    if not _DATA_PATH.exists() or len(list(_DATA_PATH.iterdir())) == 0:
+    if not Path(data_path).exists() or len(list(Path(data_path).iterdir())) == 0:
         raise RuntimeError("cannot find dataset on which system will learn")
     for stage_name in pipeline_stages:
         pip_stage_path = pipeline_repository.get_path(stage_name)
@@ -112,7 +103,7 @@ def process(pipeline_stages: list, do_report: bool, do_version: bool, do_email: 
     time_min = to_min(end-start)
     print(f"TOTAL TIME: {time_min}")
     if do_report:
-        report = generate_report()
+        report = generate_report(config)
         report["time"] = time_min
         if do_email: send_email(**report)
         if do_version: version_report()
