@@ -57,7 +57,7 @@
 
 	"trainer" : {
 		"amp": false,
-		"epochs": 1, 
+		"epochs": 0, 
 		"device": "cpu",
 		"model": {
 			"src.models.piramid_swiftnet.model.PiramidSwiftnet": {
