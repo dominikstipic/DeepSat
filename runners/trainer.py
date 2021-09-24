@@ -1,5 +1,6 @@
 from pathlib import Path
 import copy
+import argparse
 
 from . import shared_logic as shared_logic
 import src.utils.pipeline_repository as pipeline_repository
@@ -8,8 +9,17 @@ import src.observers.metrics as metrics
 import pipeline.trainer as trainer
 
 FILE_NAME = Path(__file__).stem
-INPUT  = Path("dataset_factory/output")
-OUTPUT = Path(f"{FILE_NAME}/output") 
+
+def cmi_parse() -> dict:
+    parser = argparse.ArgumentParser(description="Runner parser")
+    parser.add_argument("--config", default="config.json", help="Configuration path")
+    parser.add_argument("--input", default="dataset_factory/output", help="Input directory")
+    parser.add_argument("--output", default=f"{FILE_NAME}/output", help="Output directory")
+    args = vars(parser.parse_args())
+    args = {k: Path(v) for k,v in args.items()}
+    config_path = args["config"]
+    args["config"] = shared_logic.get_pipeline_stage_args(config_path, FILE_NAME)
+    return config_path, args
 
 def _get_datasets(input_path: Path):
     previous_stage_obj_dict = pipeline_repository.get_objects(input_path)
@@ -31,25 +41,24 @@ def get_observers(observer_dict: dict):
             results[event_key].append(obs)
     return results
 
-def prepare_pip_arguments(config_args: dict):
-    global INPUT, OUTPUT
+def prepare_pip_arguments(config: dict, input: Path, output: Path):
     args = {} 
-    import torch; torch.manual_seed(42)
-    args["model"] = factory.import_object(config_args['model'])
-    datasets_dict = _get_datasets(INPUT)
-    args["loader_dict"] = _create_dataloaders(config_args["dataloader"], **datasets_dict)
-    args["optimizer"] = factory.import_object(config_args["optimizer"], model=args["model"])
-    args["loss_function"] = factory.import_object(config_args['loss_function'])
-    args["lr_scheduler"] = factory.import_object(config_args['lr_scheduler'], optimizer=args["optimizer"])
-    args["observers_dict"] = get_observers(config_args["observers"])
-    args["epochs"] = config_args["epochs"]
-    args["device"] = config_args["device"]
-    args["amp"] = config_args["amp"]
-    args["output_dir"] = OUTPUT
+    args["model"] = factory.import_object(config['model'])
+    datasets_dict = _get_datasets(input)
+    args["loader_dict"] = _create_dataloaders(config["dataloader"], **datasets_dict)
+    args["optimizer"] = factory.import_object(config["optimizer"], model=args["model"])
+    args["loss_function"] = factory.import_object(config['loss_function'])
+    args["lr_scheduler"] = factory.import_object(config['lr_scheduler'], optimizer=args["optimizer"])
+    args["observers_dict"] = get_observers(config["observers"])
+    args["epochs"] = config["epochs"]
+    args["device"] = config["device"]
+    args["amp"] = config["amp"]
+    args["output_dir"] = output
     return args
 
 if __name__ == "__main__":
-    args = shared_logic.prerun_routine(FILE_NAME)
-    processed_args = prepare_pip_arguments(args)
+    config_path, args = cmi_parse()
+    processed_args = prepare_pip_arguments(**args)
+    shared_logic.prerun_routine(config_path, FILE_NAME)
     trainer.process(**processed_args)
 
