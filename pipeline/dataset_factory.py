@@ -118,7 +118,7 @@ def _save_datasets(pipeline_stage_name: str, dataset, train_tf_transf: Compose, 
 def process(dataset, train_tensor_tf: Compose, test_tensor_tf: Compose, train_aug: Compose, test_aug: Compose, test_ratio: float, valid_ratio: float, viz_samples: int, input_dir: Path):
     pipeline_stage_name = Path(__file__).stem
     train_shard_paths, valid_shard_paths, test_shard_paths = _split_data(input_dir, test_ratio, valid_ratio)
-    
+
     _save_datasets(pipeline_stage_name, dataset, train_tensor_tf, test_tensor_tf, train_aug, test_aug, train_shard_paths, valid_shard_paths, test_shard_paths)
     ####### artifacts for UI #######
     # CSV file with splits

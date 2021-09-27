@@ -3,14 +3,18 @@ import argparse
 
 from . import shared_logic as shared_logic
 import pipeline.sharding as sharding
+import src.utils.pipeline_repository as pipeline_repository
 
 FILE_NAME = Path(__file__).stem
 
 def cmi_parse() -> dict:
+    INPUT  = Path("preprocess/output")
+    OUTPUT = Path(f"{FILE_NAME}/output")
+    input_dir, output_dir  = pipeline_repository.get_path(INPUT), pipeline_repository.get_path(OUTPUT)
     parser = argparse.ArgumentParser(description="Runner parser")
     parser.add_argument("--config", default="config.json", help="Configuration path")
-    parser.add_argument("--input", default="preprocess/output", help="Input directory")
-    parser.add_argument("--output", default=f"{FILE_NAME}/output", help="Output directory")
+    parser.add_argument("--input", default=input_dir, help="Input directory")
+    parser.add_argument("--output", default=output_dir, help="Output directory")
     args = vars(parser.parse_args())
     args = {k: Path(v) for k,v in args.items()}
     config_path = args["config"]

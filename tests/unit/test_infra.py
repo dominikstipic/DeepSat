@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-import pytest
-
 import src.utils.pipeline_repository as pipeline_repository
 
 REPO = pipeline_repository.get_path("")
@@ -31,3 +29,13 @@ def test_reproducibility():
         if (value1 != value2).any().item():
             assert False, "Values are different"
     assert True
+
+def test_overfitting():
+    input_path  = "tests/unit/resources/overfitting/data"
+    config_path = "tests/unit/resources/overfitting/infra.json" 
+    dataset_factory_cmd = f"python -m runners.dataset_factory --input={input_path} --config={config_path}"
+    trainer_cmd = "python -m runners.trainer"
+    os.system(dataset_factory_cmd)
+    os.system(trainer_cmd)
+
+test_overfitting()

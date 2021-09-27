@@ -9,8 +9,8 @@ class Inria(Sat_Dataset):
 
     def __init__(self, root, transforms=None):
         super().__init__(root=root, transforms=transforms, split=None)
-        root = pathlib.Path(root)
-        index = [x for x in list(root.iterdir())]
+        self.root = pathlib.Path(root)
+        index = [x for x in list(self.root.iterdir())]
         self.data = [name for name in index if not str(name).endswith("-mask.tif")]
         self.labels = [name for name in index if str(name).endswith("-mask.tif")]
 
@@ -18,3 +18,6 @@ class Inria(Sat_Dataset):
         img_name, label_name = self.data[idx], self.labels[idx]
         img, mask = Image.open(img_name), Image.open(label_name)
         return img, mask 
+
+    def copy(self):
+        return Inria(self.root, self.transforms)

@@ -8,16 +8,20 @@ import src.utils.pipeline_repository as pipeline_repository
 import runners.trainer as trainer
 
 FILE_NAME = Path(__file__).stem
-MODEL_INPUT   = Path("trainer/output/model.pickle")
-DATASET_INPUT  = Path("dataset_factory/output/test_db.pickle")
-OUTPUT = Path(f"{FILE_NAME}/artifacts") 
 
 def cmi_parse() -> dict:
+    MODEL_INPUT   = Path("trainer/output/model.pickle")
+    DATASET_INPUT  = Path("dataset_factory/output/test_db.pickle")
+    OUTPUT = Path(f"{FILE_NAME}/output")
+    model_input = pipeline_repository.get_path(MODEL_INPUT)
+    dataset_input = pipeline_repository.get_path(DATASET_INPUT)
+    output_dir = pipeline_repository.get_path(OUTPUT)
+
     parser = argparse.ArgumentParser(description="Runner parser")
     parser.add_argument("--config", default="config.json", help="Configuration path")
-    parser.add_argument("--model_input", default="trainer/output/model.pickle", help="Input directory")
-    parser.add_argument("--dataset_input", default="dataset_factory/output/test_db.pickle", help="Input directory")
-    parser.add_argument("--output", default=f"{FILE_NAME}/output", help="Output directory")
+    parser.add_argument("--model_input", default=model_input, help="Input directory")
+    parser.add_argument("--dataset_input", default=dataset_input, help="Input directory")
+    parser.add_argument("--output", default=output_dir, help="Output directory")
     args = vars(parser.parse_args())
     args = {k: Path(v) for k,v in args.items()}
     config_path = args["config"]
