@@ -48,11 +48,12 @@ def _sample_images_from_splits(paths: list, sample_num: int) -> tuple:
     paths = sorted(paths)
     string_data = " ".join(paths)
     generator = hashes.HashGenerator(string_data, len(paths))
-    samples = generator.sample(sample_num)
-    sampled_paths = [paths[idx] for idx in samples]
+    sample_idx = generator.sample(sample_num)
+    sampled_paths = [paths[idx] for idx in sample_idx]
 
     imgs = [Image.open(img_path) for img_path in sampled_paths]
     get_mask_path = lambda str_path: Path(str_path).parent / f"mask-{Path(str_path).name[4:]}"
+
     masks = [Image.open(get_mask_path(img_path)) for img_path in sampled_paths]
     sampled_paths = [Path(path).name for path in sampled_paths]
     examples, example_names = list(zip(imgs, masks)), [[p, str(get_mask_path(p))] for p in sampled_paths]
@@ -86,7 +87,7 @@ def _create_split_datasets(dataset, tensor_tf_dict: dict, aug_dict: dict, splits
     for split_name, split_paths in splits.items():
         dataset_copy = dataset.copy()
         split_tensor_tf, split_aug_tf = tensor_tf_dict[split_name], aug_dict[split_name]
-        split_transform = Compose.from_composits(split_tensor_tf, split_aug_tf) 
+        split_transform = Compose.from_composits(split_aug_tf, split_tensor_tf) 
         if type(dataset_copy) == Inria:
             imgs  = list(filter(lambda str_path: Path(str_path).stem.startswith("img"), split_paths))
             masks = list(filter(lambda str_path: Path(str_path).stem.startswith("mask"), split_paths))
@@ -101,10 +102,9 @@ def _create_split_datasets(dataset, tensor_tf_dict: dict, aug_dict: dict, splits
 def process(dataset, tensor_tf_dict: dict, aug_dict: dict, test_ratio: float, valid_ratio: float, viz_samples: int, input_dir: Path):
     pipeline_stage_name = Path(__file__).stem
     splits = _split_data(input_dir, test_ratio, valid_ratio)
-    if not (tensor_tf_dict.keys() == aug_dict.keys() == splits.keys()):
+    if not (tensor_tf_dict.keys() == aug_dict.keys()):
         raise RuntimeError(f"Inconsisted configuration file: augmentation keys={list(aug_dict.keys())}, \
-                             tensor transformation keys={list(tensor_tf_dict.keys())}, \
-                             split keys={list(splits.keys())}")
+                             tensor transformation keys={list(tensor_tf_dict.keys())}")
     datasets = _create_split_datasets(dataset, tensor_tf_dict, aug_dict, splits)
     for split_name, split_dataset in datasets.items(): 
         pipeline_repository.push_pickled_obj(pipeline_stage_name, "output", split_dataset, f"{split_name}_db")

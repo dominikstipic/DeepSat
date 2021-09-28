@@ -12,6 +12,7 @@ def process(model, device: str, test_ld: DataLoader, observers_dict: dict, outpu
     model.valid_loader = test_ld
     model.evaluate()
     results = model.observer_results()
+    print(results)
 
     output_dir = pipeline_repository.create_dir_if_not_exist(output_dir)
     pipeline_repository.push_json(output_dir, _OUT_NAME, results)

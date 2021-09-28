@@ -179,7 +179,7 @@ class EarlyStoper(Subscriber):
 
 ##################################################
 
-class PredictionSaver(Subscriber):
+class StepPredictionSaver(Subscriber):
     def __init__(self, path: str, period: int, when=None):
         Subscriber.__init__(self, when)
         self.path = Path(path)
