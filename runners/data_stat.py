@@ -26,13 +26,16 @@ def prepare_pip_arguments(config: dict, input: Path, output: Path):
     input, output = Path(input), Path(output)
     split_dirs = pipeline_repository.get_path(input)
     split_dict = pipeline_repository.get_objects(split_dirs)
-    args.update(split_dict)
+    args["dataset_splits"] = split_dict
     args["viz_samples"] = config["viz_samples"]
     args["output"] = output
     return args
 
-if __name__ == "__main__":
+def process():
     config_path, args = cmi_parse()
     processed_args = prepare_pip_arguments(**args)
     shared_logic.prerun_routine(config_path, FILE_NAME)
     data_stat.process(**processed_args)
+
+if __name__ == "__main__":
+    process()

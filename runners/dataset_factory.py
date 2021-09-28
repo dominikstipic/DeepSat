@@ -52,8 +52,11 @@ def prepare_pip_arguments(config: dict, input: Path, output: Path) -> dict:
              aug_dict=aug_dict, tensor_tf_dict=tensor_dict, input_dir=input, dataset=dataset)
     return d
 
-if __name__ == "__main__":
+def process():
     config_path, args = cmi_parse()
     processed_args = prepare_pip_arguments(**args)
     shared_logic.prerun_routine(config_path, FILE_NAME)
     dataset_factory.process(**processed_args)
+
+if __name__ == "__main__":
+    process()

@@ -21,7 +21,6 @@ def cmi_parse() -> dict:
     args["config"] = shared_logic.get_pipeline_stage_args(config_path, FILE_NAME)
     return config_path, args
 
-
 def prepare_pip_arguments(config: dict, input: Path, output: Path):
     args = {}
     args["shard_size"] = config["shard_size"]
@@ -29,8 +28,11 @@ def prepare_pip_arguments(config: dict, input: Path, output: Path):
     args["output_dir"] = output
     return args
 
-if __name__ == "__main__":
+def process():
     config_path, args = cmi_parse()
     processed_args = prepare_pip_arguments(**args)
     shared_logic.prerun_routine(config_path, FILE_NAME)
     sharding.process(**processed_args)
+
+if __name__ == "__main__":
+    process()
