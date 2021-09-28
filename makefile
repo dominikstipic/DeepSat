@@ -19,6 +19,9 @@ structure:
 	mkdir -p $(DATASET_DIR)
 	mkdir -p $(REPORT_DIR)
 
+test: 
+	pytest
+
 requirements: 
 	pip install -r requirements.txt
 

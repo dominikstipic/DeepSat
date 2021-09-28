@@ -11,9 +11,9 @@ from src.utils.common import read_json
 import src.utils.pipeline_repository as pipeline_repository
 import src.utils.hashes as hashes
 
-def prerun_routine(config_path: Path, file_name: str):
+def prerun_routine(config_path: Path, file_name: str, preprocess=False):
+    save_args(config_path, file_name, preprocess)
     raw_config = get_pipeline_stage_args(config_path, file_name, compile=False)
-    save_args(config_path, file_name)
     log_arguments(raw_config, file_name)
 
 def get_pipeline_stage_args(config_path: Path, file_name: str, compile=True):

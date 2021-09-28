@@ -68,8 +68,7 @@ def push_images(artifact_home_dir: Path, images: list, names=None):
 
 
 def push_as_tar(input_file_paths: list, tar_output_path: Path) -> None:
-    global PIPELINE_REPO
-    input_file_paths = [PIPELINE_REPO / p for p in input_file_paths]
+    input_file_paths = [get_path(p) for p in input_file_paths]
 
     tar_name = tar_output_path.name
     tar_output_path = create_dir_if_not_exist(tar_output_path.parent)

@@ -16,6 +16,7 @@
          		 	"src.transforms.augmentations.Jitter" :{}
 				}
 			],
+			"valid": "$dataset_factory.augmentations.train$",
 			"test": "$dataset_factory.augmentations.train$"
 		},
 		"tensor_transf": {
@@ -29,6 +30,7 @@
 					}
 				}
 			],
+			"valid": "$dataset_factory.tensor_transf.train$",
 			"test": "$dataset_factory.tensor_transf.train$"
 		},
 
