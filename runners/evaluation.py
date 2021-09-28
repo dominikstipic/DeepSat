@@ -10,7 +10,7 @@ import runners.trainer as trainer
 FILE_NAME = Path(__file__).stem
 
 def cmi_parse() -> dict:
-    MODEL_INPUT   = Path("trainer/output/model.pickle")
+    MODEL_INPUT   = Path("trainer/output")
     DATASET_INPUT  = Path("dataset_factory/output/test_db.pickle")
     OUTPUT = Path(f"{FILE_NAME}/output")
     model_input = pipeline_repository.get_path(MODEL_INPUT)
@@ -28,9 +28,17 @@ def cmi_parse() -> dict:
     args["config"] = shared_logic.get_pipeline_stage_args(config_path, FILE_NAME)
     return config_path, args
 
+def get_model(model_input):
+    model_data = pipeline_repository.get_objects(model_input)
+    model, weights = model_data["model"], model_data["weights"]
+    model.load_state_dict(weights)
+    model.eval()
+    return model
+
+
 def prepare_pip_arguments(config: dict, dataset_input: Path, model_input: Path, output: Path):
     args = {}
-    args["model"]  = pipeline_repository.get_pickle(model_input)
+    args["model"]  = get_model(model_input)
     args["device"] = config["device"]
     dataset = pipeline_repository.get_pickle(dataset_input)
     args["test_ld"] = factory.import_object(config["dataloader"], test_db=dataset)
