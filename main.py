@@ -1,9 +1,13 @@
 import os
 from pathlib import Path
+from pdb import run
 from src.utils import common, hashes
 import argparse
 import time
 import sys
+import importlib
+import traceback
+import shutil
 
 import torch
 import yagmail
@@ -72,10 +76,9 @@ def generate_report(config_dict: dict):
     report = dict(weights=weights, model=model, eval=eval_out, config=config_dict)
     return report
 
-def run_stage(stage):
-    get_cmd = lambda stage: f"python -m runners.{stage}" 
-    cmd = get_cmd(stage)
-    os.system(cmd)
+def run_stage(stage, config_path):
+    run_cmd = f"python -m runners.{stage} --config={config_path}"
+    os.system(run_cmd)
 
 def process(do_report: bool, do_version: bool, do_email: bool, config_path: str, data_path: str):
     config = get_config(config_path)
@@ -93,9 +96,11 @@ def process(do_report: bool, do_version: bool, do_email: bool, config_path: str,
             print(f"RUNNING: {stage_name}")
             flag = False
             try:
-                run_stage(stage_name)
+                run_stage(stage_name, config_path)
             except Exception:
+                shutil.rmtree(f"repository/{stage_name}")
                 print(f"stage failed: {stage_name}")
+                traceback.print_exc()
                 sys.exit(1)
         else:
             print(f"SKIPPING: {stage_name}")

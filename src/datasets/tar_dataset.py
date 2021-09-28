@@ -6,6 +6,8 @@ from pathlib import Path
 
 import torch
 
+from src.utils.common import merge_list_2d, unpack_tar_archive_for_paths
+
 IDENTITY = lambda x : x
 
 class TarDataset(torch.utils.data.IterableDataset):
@@ -18,6 +20,12 @@ class TarDataset(torch.utils.data.IterableDataset):
         with tarfile.open(str(self.tars[0]), "r") as tar:
             tar_size = len(tar.getnames()) // 2
         return len(self.tars) * tar_size
+
+    def get_paths(self):
+        paths_list2d = list(map(lambda shard: unpack_tar_archive_for_paths(shard), self.tars))
+        paths = merge_list_2d(paths_list2d)
+        paths = list(filter(lambda p: Path(p).stem.startswith("img"), paths))
+        return paths
 
     def tar_generator(self, path):
         with tarfile.open(path, "r") as tar:

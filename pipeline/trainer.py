@@ -21,9 +21,9 @@ def process(epochs: int, amp: bool, device: str, model, loader_dict: dict, loss_
     model.observers = observers_dict
     pipeline_repository.push_pickled_obj(FILE_NAME, "output", model, _MODEL_NAME)
 
-    model.train_loader = loader_dict["train_dl"]
-    model.valid_loader = loader_dict["valid_dl"]
-
+    model.train_loader = loader_dict["train"]
+    if "valid" in loader_dict.keys():
+        model.valid_loader = loader_dict["valid"]
     model.fit(epochs=epochs, amp=amp)
 
     output_dir = pipeline_repository.create_dir_if_not_exist(output_dir)
