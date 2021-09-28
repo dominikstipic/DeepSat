@@ -5,14 +5,19 @@ from . import shared_logic as shared_logic
 import pipeline.preprocess as preprocess
 import src.utils.factory as factory
 from src.transforms.transforms import Compose
+import src.utils.pipeline_repository as pipeline_repository
+
 
 FILE_NAME = Path(__file__).stem
 
 def cmi_parse() -> dict:
+    INPUT  = "data"
+    OUTPUT = Path(f"{FILE_NAME}/output")
+    output_dir = pipeline_repository.get_path(OUTPUT)
     parser = argparse.ArgumentParser(description="Runner parser")
     parser.add_argument("--config", default="config.json", help="Configuration path")
-    parser.add_argument("--input", default="data", help="Input directory")
-    parser.add_argument("--output", default=f"{FILE_NAME}/output", help="Output directory")
+    parser.add_argument("--input", default=INPUT, help="Input directory")
+    parser.add_argument("--output", default=output_dir, help="Output directory")
     args = vars(parser.parse_args())
     args = {k: Path(v) for k,v in args.items()}
     config_path = args["config"]
@@ -30,8 +35,11 @@ def prepare_pip_arguments(config: dict, input: Path, output: Path):
     args["output_dir"] = output
     return args
 
-if __name__ == "__main__":
+def process():
     config_path, args = cmi_parse()
     processed_args = prepare_pip_arguments(**args)
     shared_logic.prerun_routine(config_path, FILE_NAME)
     preprocess.process(**processed_args)
+
+if __name__ == "__main__":
+    process()

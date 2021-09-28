@@ -201,6 +201,7 @@ class Sat_Model(nn.Module):
       if step_clock.active: self.outer_state.push("step_time", step_clock.time)
       
     def one_epoch(self):
+      self.notify_observers("before_epoch")
       pbar = tqdm(total=self.current_iter_size, position=0, leave=True)
       with self.epoch_timer as epoch_clock:         
         try:
@@ -214,6 +215,8 @@ class Sat_Model(nn.Module):
         except StopIteration:
           pbar.close()
       if epoch_clock.active: self.outer_state.push("epoch_time", epoch_clock.time)
+      self.notify_observers("after_epoch")
+
       
     @torch.no_grad()
     def evaluate(self):
@@ -225,11 +228,7 @@ class Sat_Model(nn.Module):
       self.use_amp = amp
       for self.outer_state.epoch in range(1, epochs+1):
         self.train_state()
-        self.notify_observers("before_epoch")
         self.one_epoch()
-        self.notify_observers("after_epoch")
         self.reset_observers()
-        self.evaluate()
-        self.notify_observers("after_epoch")
-        self.reset_observers()
+        if self.valid_loader: self.evaluate()
         if self.scheduler: self.scheduler.step()

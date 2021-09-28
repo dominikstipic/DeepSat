@@ -7,7 +7,7 @@ import torch
 from torchvision.transforms.functional import to_pil_image
 
 import src.utils.pipeline_repository as pipeline_repository
-
+from src.utils.common import h_concatenate_images
 
 class Subscriber():
     def __init__(self, when):
@@ -179,19 +179,20 @@ class EarlyStoper(Subscriber):
 
 ##################################################
 
-class PredictionSaver(Subscriber):
+class StepPredictionSaver(Subscriber):
     def __init__(self, path: str, period: int, when=None):
         Subscriber.__init__(self, when)
         self.path = Path(path)
         self.period = period
     
-    def update(self, prediction, iteration, **kwargs):
+    def update(self, prediction, iteration, target, **kwargs):
         if iteration % self.period != 0:
             return
         dir_name = Path("evaluation/artifacts/predictions")
         dir_name = pipeline_repository.create_dir_if_not_exist(dir_name)    
-        for one_image in prediction:
-            pil = to_pil_image(one_image.float())
+        for pred, label in zip(prediction, target):
+            pred, label = to_pil_image(pred.float()), to_pil_image(label.float())
+            image = h_concatenate_images(pred, label)
             img_path = dir_name / f"{iteration}.png"
-            pil.save(img_path)
+            image.save(img_path)
 

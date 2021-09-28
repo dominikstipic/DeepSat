@@ -58,22 +58,20 @@ def dataset_statistics(dataset):
     results = dict(mean=means, std=stds)
     return results
 
-def get_stats_dict(train_db, test_db, valid_db):
-    train_stats = dataset_statistics(train_db)
-    valid_stats = dataset_statistics(valid_db)
-    test_stats  = dataset_statistics(test_db)
-    stats = dict(train=train_stats, valid=valid_stats, test=test_stats)
-    return stats
+def get_stats_dict(dataset_splits: dict):
+    stats_dict = {}
+    for split_name, dataset in dataset_splits.items():
+        stats = dataset_statistics(dataset)
+        stats_dict[split_name] = stats
+    return stats_dict
 
 #########################
 
-def process(train_db, test_db, valid_db, viz_samples: int, output: Path) -> None:
+def process(dataset_splits: dict, viz_samples: int, output: Path) -> None:
     example_artefacts = output / "examples"
-    save_examples(train_db, viz_samples, example_artefacts / "train")
-    save_examples(test_db,  viz_samples, example_artefacts / "test")
-    save_examples(valid_db, viz_samples, example_artefacts / "valid")
-
-    stats = get_stats_dict(train_db, test_db, valid_db)
+    for split_name, dataset in dataset_splits.items():
+        save_examples(dataset, viz_samples, example_artefacts / split_name)
+    stats = get_stats_dict(dataset_splits)
     pipeline_repository.push_json(output, "stats", stats)
 
 
