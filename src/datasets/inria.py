@@ -14,6 +14,12 @@ class Inria(Sat_Dataset):
         self.data = [name for name in index if not str(name).endswith("-mask.tif")]
         self.labels = [name for name in index if str(name).endswith("-mask.tif")]
 
+    def get_paths(self):
+        return self.data
+
+    def get_examples(self):
+        return self.data
+
     def get(self, idx):
         img_name, label_name = self.data[idx], self.labels[idx]
         img, mask = Image.open(img_name), Image.open(label_name)

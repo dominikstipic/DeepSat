@@ -34,21 +34,22 @@ def _get_composite_transf(transformations: list) -> Compose:
     return Compose(transf_list)
 
 def _get_train_test_transformations(trainsformation_dict: dict) -> tuple:
-     train_transf, test_transf = trainsformation_dict["train"], trainsformation_dict["test"]
-     train_transf, test_transf = _get_composite_transf(train_transf), _get_composite_transf(test_transf)
-     return train_transf, test_transf
+    result = {}
+    for split_name, tf_dict in trainsformation_dict.items():
+        transf_composite =_get_composite_transf(tf_dict)
+        result[split_name] = transf_composite
+    return result
 
 def prepare_pip_arguments(config: dict, input: Path, output: Path) -> dict:
     viz_samples = config["viz_samples"]
     test_ratio, valid_ratio = config["test_ratio"], config["valid_ratio"]
     
-    train_aug, test_aug = _get_train_test_transformations(config["augmentations"])
-    train_tensor_tf, test_tensor_tf = _get_train_test_transformations(config["tensor_transf"])
+    aug_dict    = _get_train_test_transformations(config["augmentations"])
+    tensor_dict = _get_train_test_transformations(config["tensor_transf"])
 
     dataset = factory.get_object_from_standard_name(config["dataset"])(input, [])
     d = dict(viz_samples=viz_samples, test_ratio=test_ratio, valid_ratio=valid_ratio, 
-             train_aug=train_aug, test_aug=test_aug, train_tensor_tf=train_tensor_tf, test_tensor_tf=test_tensor_tf, 
-             input_dir=input, dataset=dataset)
+             aug_dict=aug_dict, tensor_tf_dict=tensor_dict, input_dir=input, dataset=dataset)
     return d
 
 if __name__ == "__main__":

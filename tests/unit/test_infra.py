@@ -34,7 +34,7 @@ def test_overfitting():
     input_path  = "tests/unit/resources/overfitting/data"
     config_path = "tests/unit/resources/overfitting/infra.json" 
     dataset_factory_cmd = f"python -m runners.dataset_factory --input={input_path} --config={config_path}"
-    trainer_cmd = "python -m runners.trainer"
+    trainer_cmd = f"python -m runners.trainer --config={config_path}"
     os.system(dataset_factory_cmd)
     os.system(trainer_cmd)
 
