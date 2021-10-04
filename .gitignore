@@ -5,13 +5,12 @@ __pycache__/
 
 repository/*
 reports/*
-todo 
-.dvc/service.json
-.dvc/secret.json
+data/*
+tests/unit/resources/overfit/data
+tests/unit/resources/reproducibility/data
 runner.bash
 config.json
 email.json
-data
 
 # C extensions
 *.so
