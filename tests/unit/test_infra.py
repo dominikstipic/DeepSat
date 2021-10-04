@@ -40,8 +40,8 @@ def _get_losses():
 
 def test_overfitting():
     pipeline_repository.clean()
-    input_path  = "tests/unit/resources/overfitting/data"
-    config_path = "tests/unit/resources/overfitting/infra.json" 
+    input_path  = "tests/unit/resources/overfit/data"
+    config_path = "tests/unit/resources/overfit/infra.json" 
     dataset_for_eval = "repository/dataset_factory/output/train_db.pickle"
     dataset_factory_cmd = f"python -m runners.dataset_factory --input={input_path} --config={config_path}"
     trainer_cmd = f"python -m runners.trainer --config={config_path}"

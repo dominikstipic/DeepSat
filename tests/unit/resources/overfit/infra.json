@@ -1,0 +1,149 @@
+{
+	"dataset_factory": {
+		"dataset": "src.datasets.inria.Inria",
+		"augmentations": {
+			"train": [
+				{
+					"src.transforms.augmentations.Flipper": {
+						"probability": 0.5
+					}
+				}, 
+				{
+         		 	"src.transforms.augmentations.Jitter" :{}
+				}
+			],
+			"valid": "$dataset_factory.augmentations.train$",
+			"test": "$dataset_factory.augmentations.train$"
+		},
+		"tensor_transf": {
+			"train": [
+				{
+					"src.transforms.transforms.To_Tensor": {
+						"mean": [103.2342, 108.9520, 100.1419],
+						"std": [48.6281, 44.4967, 41.9143],
+						"input_type": "%np.float32%",
+						"label_type": "%np.int64%"
+					}
+				}
+			],
+			"valid": "$dataset_factory.tensor_transf.train$",
+			"test": "$dataset_factory.tensor_transf.train$"
+		},
+
+		"test_ratio": 0.0, 
+		"valid_ratio": 0.0, 
+		"viz_samples": 3
+	},
+
+	"trainer" : {
+		"amp": false,
+		"epochs": 5, 
+		"device": "cpu",
+		"model": {
+			"src.models.piramid_swiftnet.model.PiramidSwiftnet": {
+				"num_classes": 2
+			}
+		},
+		"dataloader": {
+			"train": {
+				"torch.utils.data.DataLoader" :{
+					"dataset": "%train_db%",
+					"batch_size": 1
+				}
+			}
+		},
+		"optimizer": {
+			"torch.optim.Adam": {
+				"params": [
+					        {
+								"params": "%model.random_init_params()%", 
+					        	"lr": 4e-4, 
+								"weight_decay": 1e-4
+							}, 
+							{
+								"params": "%model.fine_tune_params()%", 
+							 	"lr": 1e-4, 
+							 	"weight_decay": 0.25e-4}
+						 ], 
+				"betas": [0.9, 0.99]
+			}
+		},
+		"loss_function": {
+			"torch.nn.CrossEntropyLoss": {
+				"ignore_index": -1, 
+				"reduction": "mean"
+			}
+		}, 
+		"lr_scheduler": {
+			"torch.optim.lr_scheduler.CosineAnnealingLR": {
+				"optimizer": "%optimizer%", 
+				"T_max": "$trainer.epochs$"
+			}
+		}
+		,
+		"observers":{
+			"after_epoch": [
+				{
+					"src.observers.subscribers.StdPrinter": {}
+				},
+				{
+					"src.observers.subscribers.MetricSaver": {
+					"when": "TRAIN",
+					"path": "trainer/artifacts"
+					}
+				}			
+			], 
+			"after_step": [
+				{
+					"src.observers.subscribers.Confusion_Matrix": {
+					"class_num": 2, 
+					"metrics": ["%accuracy%", "%precission%", "%recall%", "%mIoU%"]
+					}
+				}, 
+				{
+					"src.observers.subscribers.Running_Loss": {
+					"name": "train"
+					}
+				}
+			],
+			"before_step": [],
+			"before_epoch": []
+		}
+	},
+
+	"evaluation" : {
+		"device": "$trainer.device$",
+		"observers": {
+			"after_epoch": [], 
+			"before_epoch": [], 
+			"before_step": [],
+			"after_step": [
+				{
+					"src.observers.subscribers.Confusion_Matrix": {
+						"class_num": 2, 
+						"metrics": ["%accuracy%", "%precission%", "%recall%", "%mIoU%"]
+					}
+				}, 
+				{
+					"src.observers.subscribers.Running_Loss": {
+						"name": "test"
+					}
+				}, 
+				{
+					"src.observers.subscribers.StepPredictionSaver": {
+						"path": "evaluation/artifacts/predictions", 
+						"period": 1
+					}
+				}
+			]
+		},
+		"dataloader": {
+			"torch.utils.data.DataLoader" :{
+					"dataset": "%test_db%",
+					"batch_size": 1
+				}
+			}
+	}
+
+	
+}
