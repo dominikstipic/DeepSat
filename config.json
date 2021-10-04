@@ -164,7 +164,7 @@
 					}
 				}, 
 				{
-					"src.observers.subscribers.PredictionSaver": {
+					"src.observers.subscribers.StepPredictionSaver": {
 						"path": "evaluation/artifacts/predictions", 
 						"period": 10
 					}

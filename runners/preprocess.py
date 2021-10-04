@@ -38,7 +38,7 @@ def prepare_pip_arguments(config: dict, input: Path, output: Path):
 def process():
     config_path, args = cmi_parse()
     processed_args = prepare_pip_arguments(**args)
-    shared_logic.prerun_routine(config_path, FILE_NAME)
+    shared_logic.prerun_routine(config_path, FILE_NAME, preprocess=True)
     preprocess.process(**processed_args)
 
 if __name__ == "__main__":
