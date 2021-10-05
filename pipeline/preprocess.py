@@ -1,23 +1,48 @@
 from tqdm import tqdm
 from pathlib import Path
+from PIL import Image
 
 from torch.utils.data import Dataset
+import numpy as np
 
 import src.utils.pipeline_repository as pipeline_repository
+from src.utils.common import h_concatenate_images
 
-def process(dataset: Dataset, format: str, output_dir: Path) -> None:
+def scale_mask(mask: Image):
+    return Image.fromarray(np.array(mask, dtype=np.uint8)*255)
+
+def save_alignment(img, mask, in_art_dir, in_art_name):
+    artifact_path = pipeline_repository.get_path(in_art_dir)
+    mask_scaled = scale_mask(mask)
+    subplot = h_concatenate_images(img, mask_scaled)
+    pipeline_repository.push_images(artifact_path, [subplot], [in_art_name])
+
+def process(dataset: Dataset, format: str, output_dir: Path, in_alignment: bool, out_alignment: bool) -> None:
     img, mask = dataset[0]
     chunk_size = len(img)
     with tqdm(total=chunk_size*len(dataset)) as pbar:
         for i in range(len(dataset)):
             example_name = dataset.data[i].stem
+            if in_alignment:
+                x, y = dataset.get(i)
+                x, y = x.resize((500, 500)), y.resize((500, 500))
+                in_art_name = dataset.get_paths()[i].stem
+                in_align_dir = "preprocess/artifacts/in_alignment"
+                save_alignment(x, y, in_align_dir, in_art_name)
             image_chunks, mask_chunks = dataset[i]
             for j in range(len(image_chunks)):
                 img, mask = image_chunks[j], mask_chunks[j]
                 chunk_index = i*len(image_chunks) + j
-                image_path = Path(f"{output_dir}/img-{example_name}-{chunk_index}.{format}") # TODO: Mozda bi bilo dobro da mijenjam naziv primjera
+                image_path = Path(f"{output_dir}/img-{example_name}-{chunk_index}.{format}")
                 mask_path  = Path(f"{output_dir}/mask-{example_name}-{chunk_index}.{format}")
                 pipeline_repository.push_images(output_dir, [img, mask], [image_path.name, mask_path.name])
+                if out_alignment:
+                    _,x,y = image_path.stem.split("-")
+                    ext = image_path.name.split(".")[-1]
+                    out_art_name = f"{x}-{y}.{ext}"
+                    out_align_dir = "preprocess/artifacts/out_alignment"
+                    save_alignment(img, mask, out_align_dir, out_art_name)
                 pbar.update()
+                
 
 
