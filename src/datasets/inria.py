@@ -12,7 +12,7 @@ class Inria(Sat_Dataset):
         self.root = pathlib.Path(root)
         index = [x for x in list(self.root.iterdir())]
         self.data = [name for name in index if not str(name).endswith("-mask.tif")]
-        self.labels = [name for name in index if str(name).endswith("-mask.tif")]
+        self.labels = [path.parent / f"{path.stem}-mask.tif" for path in self.data]
 
     def get_paths(self):
         return self.data
