@@ -48,28 +48,30 @@ __strategy__ = {
                 }
 
 class KernelSlicer(object):
-    def __init__(self, kernel_size, overlap_perc, strategy="crop"):
-      assert overlap_perc >= 0 and overlap_perc < 1, "An overlap percentage must be between 0 and 1"
-      assert strategy in __strategy__.keys(), "strategy must be crop or pad!"
-      self.strategy = __strategy__[strategy]
-      self.kernel_size = kernel_size
-      overlap_size = int(overlap_perc * kernel_size)
-      self.stride = kernel_size - overlap_size
+  def __init__(self, kernel_size, overlap_perc, strategy="crop"):
+    assert overlap_perc >= 0 and overlap_perc < 1, "An overlap percentage must be between 0 and 1"
+    assert strategy in __strategy__.keys(), "strategy must be crop or pad!"
+    self.strategy = __strategy__[strategy]
+    self.kernel_size = kernel_size
+    overlap_size = int(overlap_perc * kernel_size)
+    self.stride = kernel_size - overlap_size
 
-    def bbox(self,img):
-      img = self.strategy(img, self.kernel_size, self.stride)
-      w,h = img.size
-      crops = []
-      for y1 in range(0, h - self.kernel_size + 1, self.stride):
-        for x1 in range(0, w - self.kernel_size + 1, self.stride):
-          x2, y2 = x1 + self.kernel_size - 1, y1 + self.kernel_size - 1
-          box = (x1,y1,x2+1,y2+1)
-          crop = img.crop(box)
-          crops.append(crop)
-      return crops
+  def bbox(self,img):
+    img = self.strategy(img, self.kernel_size, self.stride)
+    w,h = img.size
+    crops = []
+    for y1 in range(0, h - self.kernel_size + 1, self.stride):
+      for x1 in range(0, w - self.kernel_size + 1, self.stride):
+        x2, y2 = x1 + self.kernel_size - 1, y1 + self.kernel_size - 1
+        box = (x1,y1,x2+1,y2+1)
+        crop = img.crop(box)
+        crops.append(crop)
+    return crops
 
-    def __call__(self, xs):
-        xs = [self.bbox(x) for x in xs]
-        return xs
+  def __call__(self, xs):
+    x,y = xs
+    x_crops = self.bbox(x)
+    y_crops = self.bbox(y)
+    return x_crops, y_crops
 
 

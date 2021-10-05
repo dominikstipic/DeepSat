@@ -61,8 +61,10 @@ def load_pickle(path: Path) -> pickle:
 
 def h_concatenate_images(img1, img2, is_pil=True):
   img1, img2 = np.array(img1), np.array(img2)
+  if len(img1.shape) != 2 and len(img2.shape) == 2: img2 = cv2.cvtColor(img2, cv2.COLOR_GRAY2RGB)
+  elif len(img1.shape) == 2 and len(img2.shape) != 2: img1 = cv2.cvtColor(img1, cv2.COLOR_GRAY2RGB)
+  img = cv2.hconcat([img1, img2])
   img1 = cv2.copyMakeBorder(img1, 0, 0, 0, 10, cv2.BORDER_CONSTANT, None, value = 0)
-  img = cv2.hconcat((np.array(img1), np.array(img2)))
   if is_pil:
     img = Image.fromarray(img )
   return img
