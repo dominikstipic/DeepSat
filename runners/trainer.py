@@ -53,6 +53,7 @@ def prepare_pip_arguments(config: dict, input: Path, output: Path):
     args["device"] = config["device"]
     args["amp"] = config["amp"]
     args["output_dir"] = output
+    args["hiper_optim"] = config["hiper_optim"]
     return args
 
 def process():
