@@ -1,7 +1,10 @@
+from os import stat
 from pathlib import Path
-import matplotlib.pyplot as plt
 from PIL import Image
 import io
+
+import numpy as np
+import matplotlib.pyplot as plt
 
 import torch
 
@@ -55,7 +58,8 @@ def dataset_statistics(dataset):
     means = aggregate(means)
     stds = sample_images(dataset, len(dataset), calc_std)
     stds = aggregate(stds)
-    results = dict(mean=means, std=stds)
+    freq = [len(dataset)]
+    results = dict(mean=means, std=stds, freq=freq)
     return results
 
 def get_stats_dict(dataset_splits: dict):
@@ -65,6 +69,25 @@ def get_stats_dict(dataset_splits: dict):
         stats_dict[split_name] = stats
     return stats_dict
 
+def save_stat_plots(stats: dict, output_dir: Path):
+    output_dir = pipeline_repository.create_dir_if_not_exist(output_dir)
+    splits = []
+    metrics = {k: [] for k in stats[list(stats.keys())[0]].keys()}
+    for split, metrics_dict in stats.items():
+        splits.append(split)
+        for metric_key, metric_values in metrics_dict.items():
+            metrics[metric_key].append(metric_values)
+    start, spacing = 0, 1
+    for k, (metric_name, metric_values) in enumerate(metrics.items()):
+        for val in metric_values:
+            end = start + len(val)
+            keys = np.arange(start, end)
+            plt.bar(keys, val, label=splits[k])
+            start = end + spacing
+        plt.legend()
+        plt.savefig(output_dir / f"{metric_name}.png")  
+        plt.clf()
+
 #########################
 
 def process(dataset_splits: dict, viz_samples: int, output: Path) -> None:
@@ -72,6 +95,7 @@ def process(dataset_splits: dict, viz_samples: int, output: Path) -> None:
     for split_name, dataset in dataset_splits.items():
         save_examples(dataset, viz_samples, example_artefacts / split_name)
     stats = get_stats_dict(dataset_splits)
+    save_stat_plots(stats, output)
     pipeline_repository.push_json(output, "stats", stats)
 
 
