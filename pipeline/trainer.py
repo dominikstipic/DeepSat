@@ -43,8 +43,9 @@ def hiperparameter_optimization(model, hiper_optim, amp):
         
         model.use_amp = amp
         model.train_state()
-        model.outer_state.epoch = hiper_optim["epochs"]
-        for _ in range(hiper_optim["epochs"]): model.one_epoch()
+        for epoch in range(hiper_optim["epochs"]): 
+            model.outer_state.epoch = epoch
+            model.one_epoch()
         model.evaluate()
         loss = model.observer_results()["loss"]
         item = [(lr1, lr2, wd1, wd2), loss]
