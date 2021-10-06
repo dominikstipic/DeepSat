@@ -85,6 +85,7 @@ def save_stat_plots(stats: dict, output_dir: Path):
             plt.bar(keys, val, label=splits[k])
             start = end + spacing
         plt.legend()
+        plt.title(metric_name)
         plt.savefig(output_dir / f"{metric_name}.png")  
         plt.clf()
 
