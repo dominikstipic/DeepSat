@@ -9,7 +9,7 @@ FILE_NAME = Path(__file__).stem
 
 def cmi_parse() -> dict:
     INPUT  = Path("dataset_factory/output")
-    OUTPUT = Path(f"{FILE_NAME}/output")
+    OUTPUT = Path(f"{FILE_NAME}/artifacts")
     input_dir, output_dir  = pipeline_repository.get_path(INPUT), pipeline_repository.get_path(OUTPUT)
     parser = argparse.ArgumentParser(description="Runner parser")
     parser.add_argument("--config", default="config.json", help="Configuration path")
