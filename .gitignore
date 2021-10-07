@@ -11,6 +11,7 @@ tests/unit/resources/reproducibility/data
 runner.bash
 config.json
 email.json
+notebooks/*
 
 # C extensions
 *.so
