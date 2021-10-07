@@ -114,3 +114,26 @@ class Flipper(object):
     else:
       x,y = self.flip(x), self.flip(y)
       return x,y
+
+#######################
+
+class RandomRotation(object):
+  def __init__ (self, rotation=[-5,5]):
+    self.rotation  = rotation
+    
+  def rot_transform(self, rot, img):
+    return TF.affine(img, angle = rot, translate=[0,0], scale = 1, shear = 0)
+  
+  def rotate(self, xs):
+    x,y    = xs
+    l,u    = self.rotation
+    degree = self.rand(l,u)
+    tx,ty  = self.rot_transform(degree,x), self.rot_transform(degree,y)
+    return tx,ty
+  
+  def rand(self, lower, upper):
+    return np.random.uniform(lower, upper)
+
+  def __call__(self, xs):
+    x,y = self.rotate(xs)
+    return x,y
