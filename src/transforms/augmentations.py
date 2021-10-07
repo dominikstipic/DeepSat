@@ -1,6 +1,7 @@
 from PIL import Image
 
 import numpy as np
+import torchvision
 import torchvision.transforms.functional as TF
 
 class Jitter(object):
@@ -137,3 +138,19 @@ class RandomRotation(object):
   def __call__(self, xs):
     x,y = self.rotate(xs)
     return x,y
+
+#######################
+
+class ColorJitter(object):
+  def __init__ (self, brightness, contrast, saturation, hue):
+    self.jitter = torchvision.transforms.ColorJitter(brightness=brightness,
+                                                     contrast=contrast,
+                                                     saturation=saturation,
+                                                     hue=hue)
+    
+  def __call__(self, xs):
+    x,y = xs
+    x = self.jitter(x)
+    return x,y
+
+#######################
