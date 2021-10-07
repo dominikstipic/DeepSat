@@ -83,7 +83,7 @@ def process(do_report: bool, do_version: bool, do_email: bool, config_path: str,
     pipeline_stages = config.keys()
     flag = True
     start = time.perf_counter_ns()
-    to_min = lambda t : t / 1000 / 1000 / 60
+    to_min = lambda t : t / (1e-9 * 60)
     if not Path(data_path).exists() or len(list(Path(data_path).iterdir())) == 0:
         raise RuntimeError("cannot find dataset on which system will learn")
     for stage_name in pipeline_stages:
