@@ -15,11 +15,15 @@ class TarDataset(torch.utils.data.IterableDataset):
         super().__init__()
         self.tars = list(pathlib.Path(path).iterdir())
         self.transform = transform
+        self.length = None
 
     def __len__(self):
-        with tarfile.open(str(self.tars[0]), "r") as tar:
-            tar_size = len(tar.getnames()) // 2
-        return len(self.tars) * tar_size
+        if not self.length:
+            self.length = 0
+            for tar in self.tars:
+                with tarfile.open(str(tar), "r") as tar:
+                    self.length += len(tar.getnames()) // 2
+        return self.length
 
     def get_paths(self):
         paths_list2d = list(map(lambda shard: unpack_tar_archive_for_paths(shard), self.tars))
