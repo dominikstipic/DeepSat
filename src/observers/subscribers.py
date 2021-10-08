@@ -1,10 +1,13 @@
 from pprint import pprint
 import functools
 from pathlib import Path 
+import operator
 
 import numpy as np
+import cv2
 import torch
 from torchvision.transforms.functional import to_pil_image
+import matplotlib.pyplot as plt
 
 import src.utils.pipeline_repository as pipeline_repository
 from src.utils.common import h_concatenate_images
@@ -28,7 +31,7 @@ class Confusion_Matrix(Subscriber):
     def __init__(self, class_num: int, metrics: list, when=None, ignore_idx=[]):
         if type(ignore_idx) == int: ignore_idx = [ignore_idx]
         Subscriber.__init__(self, when)
-        self.CF = np.zeros([class_num, class_num])
+        self.CF = np.zeros([class_num, class_num], dtype=np.ulonglong)
         self.class_num = class_num
         self.ignore_idx = ignore_idx
         self._observers = {}
@@ -195,4 +198,73 @@ class StepPredictionSaver(Subscriber):
             image = h_concatenate_images(pred, label)
             img_path = dir_name / f"{iteration}.png"
             image.save(img_path)
+
+##################################################
+
+class ChosenK(Subscriber):
+    def __init__(self, path: str, k: int, is_worst_k: bool, when=None):
+        Subscriber.__init__(self, when)
+        self.path = pipeline_repository.create_dir_if_not_exist(Path(path))
+        self.k = k
+        self.list = []
+        self.compar = operator.lt if is_worst_k else operator.gt
+        self.is_worst_k = is_worst_k
+        
+    def create_image(self, input, prediction, target, loss):
+        fig, axs = plt.subplots(1, 3, figsize = (15,8))
+        axs[0].imshow(input.squeeze().permute(1,2,0))
+        axs[1].imshow(prediction.squeeze())
+        axs[2].imshow(target.squeeze())
+        fig.suptitle(f"Loss: {loss}")
+        return fig
+    
+    def get_ref(self):
+        best_idx, ref_loss = 0, np.inf
+        for i, (_, loss) in enumerate(self.list):
+            if self.compar(loss, ref_loss):
+                ref_loss = loss
+                best_idx  = i
+        return best_idx, ref_loss
+    
+    def get_path(self, iteration):
+        return self.path / f"iteration-{iteration}.png"
+
+    def update(self, fig, path):
+        cv2.imwrite(fig, str(path))
+
+    def insert(self, fig, loss, iteration):
+        self.list.append([fig, loss, iteration])
+        self.list = sorted(self.list, key=lambda x: x[1])
+        if not self.is_worst_k:
+            self.list = list(reversed(self.list))
+    
+    def delete_best(self, path):
+        _,_,iteration = self.list[0]
+        del self.list[0]
+        path = self.get_path(iteration)
+        path.unlink()
+
+    def update(self, input, prediction, target, iteration, loss, **kwargs):
+        path = self.get_path(iteration)
+        if len(self.list) < self.k:
+            fig = self.create_image(input, prediction, target, loss)
+            self.insert(fig, loss, iteration)
+            fig.savefig(str(path))
+            return
+        fig = self.create_image(input, prediction, target, loss)
+        _, ref_loss,_ = self.list[0]
+        if loss < ref_loss:
+            self.delete_best(path)
+            self.insert(fig, loss, iteration)
+            fig.savefig(str(path))
+
+##################################################
+
+class WorstK(ChosenK):
+    def __init__(self, path: str, k: int, when=None):
+        ChosenK.__init__(self, path=path, k=k, is_worst_k=True, when=when)
+        
+class BestK(ChosenK):
+    def __init__(self, path: str, k: int, when=None):
+        ChosenK.__init__(self, path=path, k=k, is_worst_k=False, when=when)
 
