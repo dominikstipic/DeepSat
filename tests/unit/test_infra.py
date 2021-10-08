@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import pytest
 
 import pandas as pd
 
@@ -55,3 +56,18 @@ def test_overfitting():
         descending = losess[i+1] < losess[i]
         flag = flag and descending
     assert flag, "The loss doesn't monotonically fall with epochs. This could indicate that model doesn't have enought capacity"
+
+
+def test_splits():
+    input = "dataset_factory/output"
+    datasets_dict = pipeline_repository.get_objects(input)
+    datasets = list(datasets_dict.values())
+    flag = True
+    for i in range(len(datasets)):
+        first = datasets[0].get_paths()
+        for j in range(i+1, len(datasets)):
+            second = datasets[j].get_paths()
+            intersection = set(first).intersection(second)
+            if len(intersection) > 0:
+                pytest.fail(f"{datasets[i]} and {datasets[j]} have common examples")
+
