@@ -6,8 +6,6 @@ __pycache__/
 repository/*
 reports/*
 data/*
-tests/unit/resources/overfit/data
-tests/unit/resources/reproducibility/data
 runner.bash
 config.json
 email.json
