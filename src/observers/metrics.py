@@ -15,41 +15,40 @@ def _all_metrics_as_dict():
             results[key] = value
     return results
 
+def binary_cf(cf, type="macro"):
+    if cf.shape == (2,2): 
+        return cf
+    else:
+        raise RuntimeError("Not implemented! Implement it")
+
 def accuracy(cf):
+    cf = binary_cf(cf)
     correct = cf.trace()
     total_size = int(cf.sum())
     avg_pixel_acc = _safe_div(correct, total_size)
     return avg_pixel_acc
 
 def recall(cf):
-    recalls = np.zeros(len(cf))
-    for i in range(len(cf)):
-        TP = cf[i,i]
-        FN = cf[:,i].sum() - TP
-        recall = _safe_div(TP, TP+FN) 
-        recalls[i] = recall
-    recall = recalls.mean()
-    return recall.item()
+    cf = binary_cf(cf)
+    TP = cf[1, 1]
+    FN = cf[0, 1]
+    recall = _safe_div(TP, TP+FN) 
+    return recall
 
 def precission(cf):
-    precissions = np.zeros(len(cf))
-    for i in range(len(cf)):
-        TP = cf[i,i]
-        FP = cf[i].sum() - TP
-        precission = _safe_div(TP, TP+FP)
-        precissions[i] = precission
-    precission = precissions.mean()
-    return precission.item()
+    cf = binary_cf(cf)
+    TP = cf[1, 1]
+    FP = cf[1, 0]
+    precission = _safe_div(TP, TP+FP)
+    return precission
 
 def mIoU(cf):
-    ious = np.zeros(len(cf))
-    for i in range(len(cf)):
-        TP = cf[i,i]
-        FP = cf[i].sum() - TP
-        FN = cf[:,i].sum() - TP
-        ious[i] = _safe_div(TP, TP+FP+FN)
-    mean_iou = ious.mean().item()
-    return mean_iou
+    cf = binary_cf(cf)
+    TP = cf[1, 1]
+    FN = cf[0, 1]
+    FP = cf[1, 0]
+    iou = TP / (TP + FN + FP)
+    return iou
 
 def mIoU_per_class(class_info):
     @functools.wraps(class_info)
