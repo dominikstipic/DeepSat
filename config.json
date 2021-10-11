@@ -4,7 +4,7 @@
 		"preprocess":[
 			{
 				"src.transforms.image_slicer.KernelSlicer": {
-					"kernel_size": 224, 
+					"kernel_size": 448, 
 					"overlap_perc": 0.15, 
 					"strategy": "crop"
 				}
@@ -14,7 +14,7 @@
 	}, 
 
 	"sharding": {
-		"shard_size" : 32
+		"shard_size" : 16
 	}, 
 
 	"dataset_factory": {
@@ -22,16 +22,21 @@
 		"augmentations": {
 			"train": [
 				{
-					"src.transforms.augmentations.Flipper": {
-						"probability": 0.5
+					"src.transforms.augmentations.ColorJitter": {
+						"brightness": 0.3, 
+						"contrast": 0.8,
+						"saturation": 0.3, 
+						"hue": 0.1
 					}
 				}, 
 				{
-         		 	"src.transforms.augmentations.Jitter" :{}
+	         		 	"src.transforms.augmentations.RandomRotation" :{
+						"rotation": [-180, 180]
+					}
 				}
 			],
 			"valid": "$dataset_factory.augmentations.train$",
-			"test": "$dataset_factory.augmentations.train$"
+			"test": []
 		},
 		"tensor_transf": {
 			"train": [
@@ -50,14 +55,14 @@
 
 		"test_ratio": 0.3, 
 		"valid_ratio": 0.1, 
-		"viz_samples": 3
+		"viz_samples": 20
 	},
 
 	"data_stat": {
-		"viz_samples": 7
+		"viz_samples": 20
 	},
 
-	"trainer" : {
+	"trainer" : {		
 		"amp": false,
 		"epochs": 0, 
 		"device": "cpu",
@@ -70,38 +75,14 @@
 			"train": {
 				"torch.utils.data.DataLoader" :{
 					"dataset": "%train_db%",
-					"batch_size": 32
+					"batch_size": "$sharding.shard_size$"
 				}
 			}, 
 			"valid": {
 				"torch.utils.data.DataLoader" :{
 					"dataset": "%valid_db%",
-					"batch_size": 32
+					"batch_size": "$sharding.shard_size$"
 				}
-			}
-		},
-		"hiper_optim": {
-			"activate": false,   
-			"epochs": 0,
-			"lr_1": [0.0001], 
-			"lr_2": [0.0001], 
-			"weight_decay_1": [0.00001],
-			"weight_decay_2":  [0.00001]
-		}, 
-		"optimizer": {
-			"torch.optim.Adam": {
-				"params": [
-					        {
-								"params": "%model.random_init_params()%", 
-					        	"lr": 4e-4, 
-								"weight_decay": 1e-4
-							}, 
-							{
-								"params": "%model.fine_tune_params()%", 
-							 	"lr": 1e-4, 
-							 	"weight_decay": 0.25e-4}
-						 ], 
-				"betas": [0.9, 0.99]
 			}
 		},
 		"loss_function": {
@@ -110,13 +91,37 @@
 				"reduction": "mean"
 			}
 		}, 
+		"hiper_optim": {
+			"activate": false,   
+			"epochs": 0,
+			"lr_1": [0.0001], 
+			"lr_2": [0.0001], 
+			"weight_decay_1": [0.00001],
+			"weight_decay_2":  [0.00001]
+		},
+		"optimizer": {
+			"torch.optim.Adam": {
+				"params": [
+					        {
+							"params": "%model.random_init_params()%", 
+					        	"lr": 4e-4, 
+							"weight_decay": 1e-4
+						}, 
+						{
+							"params": "%model.fine_tune_params()%", 
+						 	"lr": 1e-4, 
+						 	"weight_decay": 0.25e-4
+						}
+					   ], 
+				"betas": [0.9, 0.99]
+			}
+		},
 		"lr_scheduler": {
 			"torch.optim.lr_scheduler.CosineAnnealingLR": {
 				"optimizer": "%optimizer%", 
 				"T_max": "$trainer.epochs$"
 			}
-		}
-		,
+		},
 		"observers":{
 			"after_epoch": [
 				{
@@ -144,7 +149,7 @@
 				}, 
 				{
 					"src.observers.subscribers.Running_Loss": {
-					"name": "train"
+					"name": "loss"
 					}
 				}
 			],
@@ -174,7 +179,19 @@
 				{
 					"src.observers.subscribers.StepPredictionSaver": {
 						"path": "evaluation/artifacts/predictions", 
-						"period": 10
+						"period": 1
+					}
+				}, 
+				{
+					"src.observers.subscribers.WorstK": {
+						"path": "evaluation/artifacts/worstK", 
+						"k": 3
+					}
+				},
+				{
+					"src.observers.subscribers.BestK": {
+						"path": "evaluation/artifacts/bestK", 
+						"k": 3
 					}
 				}
 			]
@@ -189,3 +206,4 @@
 
 	
 }
+
