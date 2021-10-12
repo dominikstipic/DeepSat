@@ -67,14 +67,14 @@ def process(epochs: int, amp: bool, hiper_optim: dict, device: str, model, loade
     model.scheduler = lr_scheduler
     model.loss_function = loss_function
     model.observers = observers_dict
-    
-    model.device = "cpu"
-    pipeline_repository.push_pickled_obj(FILE_NAME, "output", model, _MODEL_NAME)
-    model.device = device
 
     model.train_loader = loader_dict["train"]
     if "valid" in loader_dict.keys():
         model.valid_loader = loader_dict["valid"]
+
+    model.device = "cpu"
+    pipeline_repository.push_pickled_obj(FILE_NAME, "output", model, _MODEL_NAME)
+    model.device = device
 
     if hiper_optim["activate"]:
         model, results = hiperparameter_optimization(model, hiper_optim, amp)

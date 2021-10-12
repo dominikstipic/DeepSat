@@ -39,18 +39,9 @@
 			"test": []
 		},
 		"tensor_transf": {
-			"train": [
-				{
-					"src.transforms.transforms.To_Tensor": {
-						"mean": [103.2342, 108.9520, 100.1419],
-						"std": [48.6281, 44.4967, 41.9143],
-						"input_type": "%np.float32%",
-						"label_type": "%np.int64%"
-					}
-				}
-			],
-			"valid": "$dataset_factory.tensor_transf.train$",
-			"test": "$dataset_factory.tensor_transf.train$"
+			"train": [],
+			"valid": [],
+			"test":  []
 		},
 
 		"test_ratio": 0.3, 

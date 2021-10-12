@@ -1,13 +1,16 @@
 from pathlib import Path
 from PIL import Image
 
+import numpy as np
+import torch
+
 from src.utils.common import merge_list_2d
 import src.utils.hashes as hashes
 from src.transforms.transforms import Compose
 import src.utils.pipeline_repository as pipeline_repository
 import src.utils.common as common
-
 from src.datasets.inria import Inria
+from src.transforms.transforms import To_Tensor
 
 def _classify_example(path: Path, train_ratio: float, valid_ratio: float, scale=100):
     digit = hashes.from_string(str(path), scale)
@@ -99,6 +102,38 @@ def _create_split_datasets(dataset, tensor_tf_dict: dict, aug_dict: dict, splits
         datasets[split_name] = dataset_copy
     return datasets
 
+def get_normalization_params(dataset):
+    channel_sum, channel_sum_sq = torch.zeros(3), torch.zeros(3)
+    pixel_count = None
+    for X,_ in dataset:
+        if not pixel_count:
+            w,h = X.size
+            pixel_count = w*h
+        X = torch.from_numpy(np.array(X)).float()
+        X_sq = X**2
+        m = torch.sum(X, dim=[0,1])
+        m_sq = torch.sum(X_sq, dim=[0,1])
+        channel_sum += m
+        channel_sum_sq += m_sq
+    pixel_count *= len(dataset)
+    mean_X, mean_X_sq = channel_sum/pixel_count, channel_sum_sq/pixel_count
+    std_X = np.sqrt(mean_X_sq - mean_X**2)
+    return mean_X, std_X
+
+def normalize_datasets(datasets: dict, aug_dict: dict, tensor_tf_dict: dict):
+    train_dataset = datasets["train"]
+    train_mean, train_std = get_normalization_params(train_dataset)
+    for split_name, dataset in datasets.items():
+        dataset.mean, dataset.std = train_mean, train_std
+        split_aug_tf, split_tensor_tf = aug_dict[split_name], tensor_tf_dict[split_name]
+        to_tensor = To_Tensor(mean=dataset.mean,
+                              std=dataset.std,
+                              input_type=np.float32, 
+                              label_type=np.int64)
+        split_tensor_tf = Compose([to_tensor, *(split_tensor_tf).transforms])
+        dataset.transform = Compose.from_composits(split_aug_tf, split_tensor_tf) 
+    return datasets
+
 def process(dataset, tensor_tf_dict: dict, aug_dict: dict, test_ratio: float, valid_ratio: float, viz_samples: int, input_dir: Path):
     pipeline_stage_name = Path(__file__).stem
     splits = _split_data(input_dir, test_ratio, valid_ratio)
@@ -106,9 +141,10 @@ def process(dataset, tensor_tf_dict: dict, aug_dict: dict, test_ratio: float, va
         raise RuntimeError(f"Inconsisted configuration file: augmentation keys={list(aug_dict.keys())}, \
                              tensor transformation keys={list(tensor_tf_dict.keys())}")
     datasets = _create_split_datasets(dataset, tensor_tf_dict, aug_dict, splits)
+    datasets = normalize_datasets(datasets, aug_dict, tensor_tf_dict)
     for split_name, split_dataset in datasets.items(): 
         pipeline_repository.push_pickled_obj(pipeline_stage_name, "output", split_dataset, f"{split_name}_db")
-    
+
     # CSV file with splits
     csv_output_dir = Path(pipeline_stage_name) / "artifacts"
     _save_splits_in_csv(datasets, csv_output_dir)
