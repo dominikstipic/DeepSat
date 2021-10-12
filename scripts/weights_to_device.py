@@ -15,5 +15,5 @@ device = args.device
 out = args.out
 
 weights = torch.load(path, map_location=torch.device(device))
-output = Path(path).parent / f"{device}_{out}"
+output = Path(path).parent / out
 torch.save(weights, str(output))

@@ -150,7 +150,7 @@
 	},
 
 	"evaluation" : {
-		"device": "$trainer.device$",
+		"device": "cpu",
 		"observers": {
 			"after_epoch": [], 
 			"before_epoch": [], 

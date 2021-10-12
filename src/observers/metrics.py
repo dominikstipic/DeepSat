@@ -47,7 +47,7 @@ def mIoU(cf):
     TP = cf[1, 1]
     FN = cf[0, 1]
     FP = cf[1, 0]
-    iou = TP / (TP + FN + FP)
+    iou =_safe_div(TP, TP + FN + FP)
     return iou
 
 def mIoU_per_class(class_info):
