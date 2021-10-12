@@ -7,10 +7,9 @@ import numpy as np
 import cv2
 import torch
 from torchvision.transforms.functional import to_pil_image
-import matplotlib.pyplot as plt
 
 import src.utils.pipeline_repository as pipeline_repository
-from src.utils.common import h_concatenate_images
+from src.utils.common import h_concatenate_images, renorm_tensor
 
 class Subscriber():
     def __init__(self, when):
@@ -210,12 +209,12 @@ class ChosenK(Subscriber):
         self.compar = operator.lt if is_worst_k else operator.gt
         self.is_worst_k = is_worst_k
         
-    def create_image(self, input, prediction, target, loss):
-        fig, axs = plt.subplots(1, 3, figsize = (15,8))
-        axs[0].imshow(input.squeeze().permute(1,2,0))
-        axs[1].imshow(prediction.squeeze())
-        axs[2].imshow(target.squeeze())
-        fig.suptitle(f"Loss: {loss}")
+    def create_image(self, input, prediction, target, loss, norm_mean, norm_std):
+        input, prediction, target = input.squeeze(), prediction.squeeze(), target.squeeze() 
+        input = renorm_tensor(input, norm_mean, norm_std)
+        input, prediction, target = to_pil_image(input), to_pil_image(prediction.float()), to_pil_image(target.float()) 
+        fig = h_concatenate_images(input, target)
+        fig = h_concatenate_images(fig, prediction)
         return fig
     
     def get_ref(self):
@@ -244,19 +243,19 @@ class ChosenK(Subscriber):
         path = self.get_path(iteration)
         path.unlink()
 
-    def update(self, input, prediction, target, iteration, loss, **kwargs):
+    def update(self, input, prediction, target, iteration, loss, norm_mean, norm_std, **kwargs):
         path = self.get_path(iteration)
         if len(self.list) < self.k:
-            fig = self.create_image(input, prediction, target, loss)
+            fig = self.create_image(input, prediction, target, loss, norm_mean, norm_std)
             self.insert(fig, loss, iteration)
-            fig.savefig(str(path))
+            fig.save(str(path))
             return
-        fig = self.create_image(input, prediction, target, loss)
+        fig = self.create_image(input, prediction, target, loss, norm_mean, norm_std)
         _, ref_loss,_ = self.list[0]
         if loss < ref_loss:
             self.delete_best(path)
             self.insert(fig, loss, iteration)
-            fig.savefig(str(path))
+            fig.save(str(path))
 
 ##################################################
 

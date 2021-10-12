@@ -11,7 +11,7 @@ import torch
 import yagmail
 
 import src.utils.pipeline_repository as pipeline_repository
-import devops.commit as commit
+import scripts.commit as commit
 
 _EMAIL_PATH  = Path("email.json")
 REPOSITORY_PATH = pipeline_repository.get_path("")
@@ -26,6 +26,7 @@ def cmi_parse() -> tuple:
     parser.add_argument("--do_version", dest="do_version", action="store_true", help="Version reports with dvc")
     parser.add_argument("--config_path", default="config.json", type=str, help="Path to the configuration path")
     parser.add_argument("--data_path", default="data", type=str, help="Path to the dataset directory")
+    parser.add_argument("--force_eval", dest="force_eval", action="store_true", help="Force pipeline run")
     args = vars(parser.parse_args())
     return args
 
@@ -74,34 +75,39 @@ def generate_report(config_dict: dict):
     report = dict(weights=weights, model=model, eval=eval_out, config=config_dict)
     return report
 
-def run_stage(stage, config_path):
-    run_cmd = f"python -m runners.{stage} --config={config_path}"
-    os.system(run_cmd)
+def run(stage_name: str, config_path: Path):
+    print(f"running: {stage_name}")
+    try:
+        run_cmd = f"python -m runners.{stage_name} --config={config_path}"
+        os.system(run_cmd)
+    except Exception:
+        shutil.rmtree(f"repository/{stage_name}")
+        print(f"stage failed: {stage_name}")
+        traceback.print_exc()
+        sys.exit(1)
 
-def process(do_report: bool, do_version: bool, do_email: bool, config_path: str, data_path: str):
+def run_pipeline_stage(stage_name: str, config_path: Path, previous_params: dict, current_params: dict, previous_phase_runned: bool, force_eval: bool):
+    can_skip_stage = lambda previous_params, current_params: previous_params != None and current_params == previous_params
+    if force_eval or not can_skip_stage(previous_params, current_params) or previous_phase_runned:
+        run(stage_name, config_path)
+        return True
+    print(f"skipping: {stage_name}")
+    return False
+    
+def process(do_report: bool, do_version: bool, do_email: bool, force_eval: bool, config_path: str, data_path: str):
     config = get_config(config_path)
     pipeline_stages = config.keys()
-    flag = True
     start = time.perf_counter_ns()
     to_min = lambda t : t / (1e9 * 60)
     if not Path(data_path).exists() or len(list(Path(data_path).iterdir())) == 0:
         raise RuntimeError("cannot find dataset on which system will learn")
+    previous_phase_runned = False
     for stage_name in pipeline_stages:
         pip_stage_path = pipeline_repository.get_path(stage_name)
         runned_with_path = pip_stage_path / META_JSON
-        runned_with = common.read_json(runned_with_path)
-        if runned_with == None or config[stage_name] != runned_with or not flag:
-            print(f"RUNNING: {stage_name}")
-            flag = False
-            try:
-                run_stage(stage_name, config_path)
-            except Exception:
-                shutil.rmtree(f"repository/{stage_name}")
-                print(f"stage failed: {stage_name}")
-                traceback.print_exc()
-                sys.exit(1)
-        else:
-            print(f"SKIPPING: {stage_name}")
+        current_params, previous_params = config[stage_name], common.read_json(runned_with_path)
+        pipeline_runned = run_pipeline_stage(stage_name, config_path, previous_params, current_params, previous_phase_runned, force_eval)
+        previous_phase_runned = previous_phase_runned and pipeline_runned
     end = time.perf_counter_ns()
     time_min = to_min(end-start)
     print(f"TOTAL TIME: {time_min}")

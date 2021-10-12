@@ -136,6 +136,8 @@ class Sat_Model(nn.Module):
     @train_loader.setter
     def train_loader(self, train_loader):
       self._train_loader = train_loader
+      dataset = train_loader.dataset
+      self.outer_state.norm_mean, self.outer_state.norm_std = dataset.mean, dataset.std
     
     ################### HOOKS & CALLBACKS #############################
     
@@ -146,6 +148,7 @@ class Sat_Model(nn.Module):
       pass
 
     def notify_observers(self, key=None):
+      if key in self.observers.keys() and not self.observers[key]: return
       state = self.outer_state.get()
       metrics = self.observer_results()
       state["metrics"] = metrics

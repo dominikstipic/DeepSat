@@ -1,4 +1,3 @@
-from os import stat
 from pathlib import Path
 from PIL import Image
 import io
@@ -59,7 +58,7 @@ def dataset_statistics(dataset):
     stds = sample_images(dataset, len(dataset), calc_std)
     stds = aggregate(stds)
     freq = [len(dataset)]
-    results = dict(mean=means, std=stds, freq=freq)
+    results = dict(mean=means, std=stds, freq=freq, norm_mean=dataset.mean.tolist(), norm_std=dataset.std.tolist())
     return results
 
 def get_stats_dict(dataset_splits: dict):
@@ -79,6 +78,7 @@ def save_stat_plots(stats: dict, output_dir: Path):
             metrics[metric_key].append(metric_values)
     start, spacing = 0, 1
     for k, (metric_name, metric_values) in enumerate(metrics.items()):
+        if metric_name.startswith("norm"): continue
         for val in metric_values:
             end = start + len(val)
             keys = np.arange(start, end)

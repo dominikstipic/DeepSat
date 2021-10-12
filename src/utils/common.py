@@ -68,3 +68,9 @@ def h_concatenate_images(img1, img2, is_pil=True):
   if is_pil:
     img = Image.fromarray(img )
   return img
+
+def renorm_tensor(t, mean, std):
+  X = t.clone()
+  for i in range(len(t)):
+    X[i] = X[i]*std[i] + mean[i]
+  return X
