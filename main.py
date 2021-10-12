@@ -30,11 +30,12 @@ def cmi_parse() -> tuple:
     args = vars(parser.parse_args())
     return args
 
-def send_email(config: dict, eval: dict, time: int, **kwargs):
+def send_email(time: int, config: dict):
+    metric_path = pipeline_repository.get_path("evaluation/output")
+    results = pipeline_repository.get_objects(metric_path)["metrics"]
+    results["time"] = f"{time} min"
     email_dict = common.read_json(_EMAIL_PATH)
     yagmail.register(email_dict["email"], email_dict["pass"])
-    results = eval["metrics"]
-    results["time"] = f"{time} min" 
     contents = [
         results,
         "###########################################", 
@@ -111,11 +112,8 @@ def process(do_report: bool, do_version: bool, do_email: bool, force_eval: bool,
     end = time.perf_counter_ns()
     time_min = to_min(end-start)
     print(f"TOTAL TIME: {time_min}")
-    if do_report:
-        report = generate_report(config)
-        report["time"] = time_min
-        if do_email: send_email(**report)
-        if do_version: version_report()
+    if do_email:
+        send_email(time_min, config)
 
 if __name__ == "__main__":
     args = cmi_parse()
