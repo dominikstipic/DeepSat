@@ -35,6 +35,7 @@ class Sat_Model(nn.Module):
       self.optimizer = None
       self.scheduler = None
       self.loss_function = None
+      self.postprocess = None
       
       self.observers = {
         "after_epoch" : [], 
@@ -178,13 +179,15 @@ class Sat_Model(nn.Module):
         input_batch, target_batch = next(self.current_iterator)
         input_batch, target_batch = input_batch.to(self.device), target_batch.to(self.device)
         logits_batch = self.forward(input_batch)
-        batch_loss = self.loss_function(logits_batch, target_batch)
+        if self.postprocess:
+          self.outer_state.prediction = self.postprocess(logits_batch)
+        else:
+          self.outer_state.prediction = logits_batch.argmax(1)
+        self.outer_state.loss = self.loss_function(logits_batch, target_batch)
         # set the model's outer state
         self.outer_state.input = input_batch
         self.outer_state.target = target_batch
         self.outer_state.logits = logits_batch
-        self.outer_state.prediction = logits_batch.argmax(1)
-        self.outer_state.loss = batch_loss
 
     def backward_step(self):
       scaled_batch_loss = self._scaler.scale(self.outer_state.loss) if self.use_amp else self.outer_state.loss

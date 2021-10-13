@@ -2,13 +2,16 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 
 import src.utils.pipeline_repository as pipeline_repository
+from src.transforms.transforms import Compose
+
 
 FILE_NAME = Path(__file__).stem
 _OUT_NAME = "metrics.json"
 
-def process(model, device: str, test_ld: DataLoader, observers_dict: dict, output_dir: Path):
+def process(model, device: str, test_ld: DataLoader, observers_dict: dict, postprocess: Compose, output_dir: Path):
     model.device = device
     model.observers = observers_dict
+    model.postprocess = postprocess
     model.valid_loader = test_ld
     model.evaluate()
     results = model.observer_results()

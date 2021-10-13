@@ -1,10 +1,10 @@
-from pdb import set_trace
 from PIL import Image
 import random
 
 import numpy as np
 import torch
 import torchvision.transforms as torch_transf
+import cv2
 
 #######################
 
@@ -105,3 +105,25 @@ class To_Tensor(object):
     return image, labels
 
 #######################
+
+class Dilation(object):
+  def __init__(self, iterations, kernel_size):
+    self.iterations = iterations
+    self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+
+  def dilate(self, img):
+    img = np.array(img).astype(np.uint8)
+    out = cv2.dilate(img.copy(), self.kernel, iterations=self.iterations+1)
+    out = torch.from_numpy(out)
+    return out
+
+  def __call__(self, logits):
+    if len(logits.shape) == 4:
+      predictions = logits.argmax(1)
+      batch_size,_,_ = predictions.shape
+      for k in range(batch_size):
+        predictions[k] = self.dilate(predictions[k])
+      return predictions
+    else:
+      predictions = logits.argmax(0)
+      return self.dilate(logits)

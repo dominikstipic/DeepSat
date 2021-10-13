@@ -4,9 +4,10 @@ from pathlib import Path
 import operator
 
 import numpy as np
-import cv2
 import torch
 from torchvision.transforms.functional import to_pil_image
+from PIL import ImageDraw
+from PIL import ImageFont
 
 import src.utils.pipeline_repository as pipeline_repository
 from src.utils.common import h_concatenate_images, renorm_tensor
@@ -200,6 +201,9 @@ class StepPredictionSaver(Subscriber):
 
 ##################################################
 
+
+
+
 class ChosenK(Subscriber):
     def __init__(self, path: str, k: int, is_worst_k: bool, when=None):
         Subscriber.__init__(self, when)
@@ -215,6 +219,10 @@ class ChosenK(Subscriber):
         input, prediction, target = to_pil_image(input), to_pil_image(prediction.float()), to_pil_image(target.float()) 
         fig = h_concatenate_images(input, target)
         fig = h_concatenate_images(fig, prediction)
+
+        myFont = ImageFont.truetype('FreeMono.ttf', 65)
+        draw = ImageDraw.Draw(fig)
+        draw.text((25, 25), f"loss={round(loss.item(),3)}", font=myFont, fill=(255, 0, 0))
         return fig
     
     def get_ref(self):
@@ -227,9 +235,6 @@ class ChosenK(Subscriber):
     
     def get_path(self, iteration):
         return self.path / f"iteration-{iteration}.png"
-
-    def update(self, fig, path):
-        cv2.imwrite(fig, str(path))
 
     def insert(self, fig, loss, iteration):
         self.list.append([fig, loss, iteration])
