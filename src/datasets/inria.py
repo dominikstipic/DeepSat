@@ -15,7 +15,7 @@ class Inria(Sat_Dataset):
         self.labels = [path.parent / f"{path.stem}-mask.tif" for path in self.data]
 
     def get_paths(self):
-        return self.data
+        return sorted(self.data)
 
     def get_examples(self):
         return self.data

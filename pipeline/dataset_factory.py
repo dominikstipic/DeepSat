@@ -145,6 +145,11 @@ def process(dataset, tensor_tf_dict: dict, aug_dict: dict, test_ratio: float, va
     for split_name, split_dataset in datasets.items(): 
         pipeline_repository.push_pickled_obj(pipeline_stage_name, "output", split_dataset, f"{split_name}_db")
 
+    calc_hash = lambda dataset: hashes.get_digest(" ".join(dataset.get_paths()))
+    dataset_hashes = {split_name: calc_hash(dataset) for split_name, dataset in datasets.items()}
+    hash_dir = Path(pipeline_stage_name) / "artifacts"
+    pipeline_repository.push_json(hash_dir, "hashes.json", dataset_hashes)
+
     # CSV file with splits
     csv_output_dir = Path(pipeline_stage_name) / "artifacts"
     _save_splits_in_csv(datasets, csv_output_dir)

@@ -16,6 +16,10 @@ def random_shuffle(str_list: list):
     random.shuffle(str_list) 
     return str_list
 
+def get_digest(data: str):
+    hash_object = hashlib.md5(data.encode()).hexdigest()
+    return hash_object
+
 def from_string(data: str, scale: int) -> int:
     hash_object = hashlib.md5(data.encode()).hexdigest()
     digit = int(hash_object, 16) % scale
