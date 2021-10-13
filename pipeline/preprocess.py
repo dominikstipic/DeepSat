@@ -1,9 +1,12 @@
+from torch.utils import data
 from tqdm import tqdm
 from pathlib import Path
 from PIL import Image
 
 from torch.utils.data import Dataset
 import numpy as np
+from src.utils import common
+from src.utils.hashes import get_digest
 
 import src.utils.pipeline_repository as pipeline_repository
 from src.utils.common import h_concatenate_images
@@ -17,7 +20,17 @@ def save_alignment(img, mask, in_art_dir, in_art_name):
     subplot = h_concatenate_images(img, mask_scaled)
     pipeline_repository.push_images(artifact_path, [subplot], [in_art_name])
 
+def save_dataset_hash(dataset: Dataset, out_path: Path):
+    paths = dataset.get_paths()
+    paths_str = " ".join(paths)
+    digest = get_digest(paths_str)
+    result = {"hash": digest}
+    pipeline_repository.push_json(out_path, "hash.json", result)
+
+
 def process(dataset: Dataset, format: str, output_dir: Path, in_alignment: bool, out_alignment: bool) -> None:
+    path = pipeline_repository.get_path("preprocess/artifacts")
+    save_dataset_hash(dataset, path)
     img, mask = dataset[0]
     chunk_size = len(img)
     with tqdm(total=chunk_size*len(dataset)) as pbar:
@@ -43,6 +56,8 @@ def process(dataset: Dataset, format: str, output_dir: Path, in_alignment: bool,
                     out_align_dir = "preprocess/artifacts/out_alignment"
                     save_alignment(img, mask, out_align_dir, out_art_name)
                 pbar.update()
+    
+    
                 
 
 
