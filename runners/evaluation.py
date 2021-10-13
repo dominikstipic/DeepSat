@@ -6,6 +6,7 @@ import pipeline.evaluation as evaluation
 import src.utils.factory as factory
 import src.utils.pipeline_repository as pipeline_repository
 import runners.trainer as trainer
+from src.transforms.transforms import Compose
 
 FILE_NAME = Path(__file__).stem
 
@@ -35,6 +36,10 @@ def get_model(model_input):
     model.eval()
     return model
 
+def get_postprocess(postprocess_list: list):
+    postprocess_list = [factory.import_object(postprocess_item) for postprocess_item in postprocess_list]
+    postprocess = Compose(postprocess_list)
+    return postprocess
 
 def prepare_pip_arguments(config: dict, dataset_input: Path, model_input: Path, output: Path):
     args = {}
@@ -43,6 +48,7 @@ def prepare_pip_arguments(config: dict, dataset_input: Path, model_input: Path, 
     dataset = pipeline_repository.get_pickle(dataset_input)
     args["test_ld"] = factory.import_object(config["dataloader"], test_db=dataset)
     args["observers_dict"] = trainer.get_observers(config["observers"])
+    args["postprocess"] = get_postprocess(config["postprocess"])
     args["output_dir"] = output
     return args
 
