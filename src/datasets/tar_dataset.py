@@ -29,6 +29,7 @@ class TarDataset(torch.utils.data.IterableDataset):
         paths_list2d = list(map(lambda shard: unpack_tar_archive_for_paths(shard), self.tars))
         paths = merge_list_2d(paths_list2d)
         paths = list(filter(lambda p: Path(p).stem.startswith("img"), paths))
+        paths = sorted(paths)
         return paths
 
     def tar_generator(self, path):
