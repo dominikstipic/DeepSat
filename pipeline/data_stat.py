@@ -4,8 +4,9 @@ import io
 
 import numpy as np
 import matplotlib.pyplot as plt
-
 import torch
+import cv2
+import pandas as pd
 
 import src.utils.pipeline_repository as pipeline_repository
 
@@ -89,6 +90,30 @@ def save_stat_plots(stats: dict, output_dir: Path):
         plt.savefig(output_dir / f"{metric_name}.png")  
         plt.clf()
 
+
+def component_size_analysis(dataset_splits: dict, output_dict: dict):
+    pipeline_repository.create_dir_if_not_exist(output_dict)
+    for dataset_name, dataset in dataset_splits.items():
+        analysis = dataset_component_analysis(dataset)
+        component_nums = analysis["component_num"]
+        component_nums.hist(alpha=0.8, label=dataset_name)
+    plt.title(f"component number distribution")
+    plt.legend()
+    plt.savefig(output_dict / f"hist.png")
+    plt.clf()
+    plt.cla()
+
+
+def dataset_component_analysis(dataset) -> pd.DataFrame:
+    analysis_list = []
+    for _, mask in dataset:
+        mask = mask.numpy().astype(np.uint8)
+        component_num, _, _, _ = cv2.connectedComponentsWithStats(mask)
+        d = dict(name=dataset.path, component_num=component_num)
+        analysis_list.append(d)
+    analysis_dataframe = pd.DataFrame(analysis_list)
+    return analysis_dataframe
+
 #########################
 
 def process(dataset_splits: dict, viz_samples: int, output: Path) -> None:
@@ -97,6 +122,7 @@ def process(dataset_splits: dict, viz_samples: int, output: Path) -> None:
         save_examples(dataset, viz_samples, example_artefacts / split_name)
     stats = get_stats_dict(dataset_splits)
     save_stat_plots(stats, output)
+    component_size_analysis(dataset_splits, output)
     pipeline_repository.push_json(output, "stats", stats)
 
 

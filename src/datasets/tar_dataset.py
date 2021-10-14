@@ -38,19 +38,24 @@ class TarDataset(torch.utils.data.IterableDataset):
                 file = tar.extractfile(tar_info)
                 content = file.read()
                 pil_image = Image.open(io.BytesIO(content))
-                yield pil_image
+                yield pil_image, tar_info.path
     
     def copy(self):
         path = self.tars[0].parent
         return TarDataset(path, self.transform)
+
+    def get_example(self, gen):
+        img, self.img_path = next(gen)
+        mask, self.mask_path = next(gen)
+        self.path = "-".join(Path(self.mask_path).name.split("-")[1:])
+        return img, mask
 
     def __iter__(self):
         for tar in self.tars:
             gen = self.tar_generator(str(tar))
             try:
                 while True:
-                    img = next(gen)
-                    mask = next(gen)
+                    img, mask = self.get_example(gen)
                     img, mask = self.transform([img, mask])
                     yield img, mask
             except StopIteration:
