@@ -98,8 +98,9 @@ class RandomSquareCropAndScale:
 #######################
 
 class Flipper(object):
-  def __init__ (self, probability):
+  def __init__ (self, probability: float, is_horizontal: bool):
     self.prob = probability
+    self.is_horizontal = Image.FLIP_LEFT_RIGHT if is_horizontal else Image.FLIP_TOP_BOTTOM
   
   def flip_coin(self):
     v = np.random.uniform(0,1)
