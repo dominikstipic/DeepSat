@@ -10,14 +10,11 @@ def create_dir_if_not_exist(root_dir: Path) -> Path:
         os.makedirs(str(root_dir), exist_ok=True)
     return root_dir
 
-def get_augmentations():
-    AUG_JSON = Path("experiments/augmentation_test/augs.json")
-    augs = common.read_json(AUG_JSON)
-    augmentation_list = augs["augs"]
-    return augmentation_list
+def get_augmentations(config: dict):
+    return config["dataset_factory"]["augmentations"]["train"].copy()
 
 def get_config():
-    CONFIG_JSON = Path("config.json")
+    CONFIG_JSON = Path("experiments/augmentation_test/config.json")
     return common.read_json(CONFIG_JSON)
 
 def all_subsets(ss):
@@ -34,8 +31,9 @@ def create_configs(augmentation_list: list, config: dict, out_dir: Path):
         common.write_json(out_json, out_path)
 
 def process(config_dir: Path, out_dir: Path):
-    augmentation_list = get_augmentations()
     config = get_config()
+    augmentation_list = get_augmentations(config)
+    import pdb; pdb.set_trace()
     create_configs(augmentation_list, config, config_dir)
     pipeline_repository.clean()
     for config_path in config_dir.iterdir():
