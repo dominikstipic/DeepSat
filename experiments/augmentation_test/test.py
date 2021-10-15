@@ -33,7 +33,6 @@ def create_configs(augmentation_list: list, config: dict, out_dir: Path):
 def process(config_dir: Path, out_dir: Path):
     config = get_config()
     augmentation_list = get_augmentations(config)
-    import pdb; pdb.set_trace()
     create_configs(augmentation_list, config, config_dir)
     pipeline_repository.clean()
     for config_path in config_dir.iterdir():

@@ -206,7 +206,7 @@ class Sat_Model(nn.Module):
           input_batch, target_batch = next(self.current_iterator)
           input_batch, target_batch = self.to_device(input_batch, target_batch)
           logits_batch = self.forward(input_batch)
-          self.outer_state.prediction = self.postprocess(logits_batch) if self.postprocess else logits_batch.argmax(1)
+          self.outer_state.prediction = self.postprocess(logits_batch) if self.postprocess.transforms else logits_batch.argmax(1)
           ###
           self.outer_state.loss = self.loss_function(logits_batch, target_batch)
           self.outer_state.input = input_batch
