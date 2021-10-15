@@ -33,16 +33,25 @@ def create_configs(augmentation_list: list, config: dict, out_dir: Path):
         out_path = out_dir / f"{idx}.json"
         common.write_json(out_json, out_path)
 
-def process(out_dir: Path):
+def process(config_dir: Path, out_dir: Path):
     augmentation_list = get_augmentations()
     config = get_config()
-    create_configs(augmentation_list, config, out_dir)
+    create_configs(augmentation_list, config, config_dir)
     pipeline_repository.clean()
-    for out_path in out_dir.iterdir():
-        cmd = f"python main.py --config_path={str(out_path)}"
-        os.system(cmd)
+    for config_path in config_dir.iterdir():
+        print(out_dir)
+        run_cmd = f"python main.py --config_path={str(config_path)}"
+        os.system(run_cmd)
+        idx = int(out_dir.stem)
+        out_path = str(out_dir / idx)
+        eval_cp_cmd  = f"cp -r repository/evaluation {out_path}"
+        train_cp_cmd = f"cp -r repository/trainer {out_path}"
+        os.system(eval_cp_cmd), os.system(train_cp_cmd)
+
 
 if __name__ == "__main__":
-    OUT = Path("experiments/augmentation_test/configs")
-    OUT = create_dir_if_not_exist(OUT)
-    process(OUT)
+    CONFIG_DIR = Path("experiments/augmentation_test/configs")
+    CONFIG_DIR = create_dir_if_not_exist(CONFIG_DIR)
+    OUT_DIR = Path("experiments/augmentation_test/out")
+    OUT_DIR = create_dir_if_not_exist(OUT_DIR)
+    process(CONFIG_DIR, OUT_DIR)
