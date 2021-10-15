@@ -39,8 +39,7 @@ def process(config_dir: Path, out_dir: Path):
         print(out_dir)
         run_cmd = f"python main.py --config_path={str(config_path)}"
         os.system(run_cmd)
-        idx = int(out_dir.stem)
-        out_path = str(out_dir / idx)
+        out_path = str(out_dir / config_path.stem)
         eval_cp_cmd  = f"cp -r repository/evaluation {out_path}"
         train_cp_cmd = f"cp -r repository/trainer {out_path}"
         os.system(eval_cp_cmd), os.system(train_cp_cmd)
