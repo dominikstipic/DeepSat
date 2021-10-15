@@ -7,6 +7,7 @@ from torch.cuda.amp import autocast
 from src.utils.common import merge_list_dicts, merge_list_2d
 from src.utils.decorators import safe_interruption
 from src.utils.timer import CodeTimer
+from src.transforms.transforms import Compose 
 
 class ModelState():
   """
@@ -37,7 +38,7 @@ class Sat_Model(nn.Module):
       self.optimizer = None
       self.scheduler = None
       self.loss_function = None
-      self.postprocess = None
+      self.postprocess = Compose([])
       
       self.observers = {
         "after_epoch" : [], 
