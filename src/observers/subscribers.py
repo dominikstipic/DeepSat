@@ -217,9 +217,9 @@ class ChosenK(Subscriber):
         fig = h_concatenate_images(input, target)
         fig = h_concatenate_images(fig, prediction)
 
-        myFont = ImageFont.truetype('FreeMono.ttf', 65)
+        font = ImageFont.load_default()
         draw = ImageDraw.Draw(fig)
-        draw.text((25, 25), f"loss={round(loss.item(),3)}", font=myFont, fill=(255, 0, 0))
+        draw.text((25, 25), f"loss={round(loss.item(),3)}", font=font, fill=(255, 0, 0))
         return fig
     
     def get_ref(self):
