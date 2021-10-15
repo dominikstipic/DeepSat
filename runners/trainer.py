@@ -52,6 +52,7 @@ def prepare_pip_arguments(config: dict, input: Path, output: Path):
     args["epochs"] = config["epochs"]
     args["device"] = config["device"]
     args["amp"] = config["amp"]
+    args["mixup_factor"] = config["mixup_factor"]
     args["output_dir"] = output
     args["hiper_optim"] = config["hiper_optim"]
     return args

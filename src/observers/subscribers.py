@@ -201,9 +201,6 @@ class StepPredictionSaver(Subscriber):
 
 ##################################################
 
-
-
-
 class ChosenK(Subscriber):
     def __init__(self, path: str, k: int, is_worst_k: bool, when=None):
         Subscriber.__init__(self, when)
