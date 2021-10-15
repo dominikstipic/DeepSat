@@ -24,6 +24,8 @@ class ModelState():
       state = self.__dict__
       return state
 
+def linear_combination(x, y, alpha):
+  return alpha*x + (1-alpha)*y
 
 class Sat_Model(nn.Module):
     def __init__(self):
@@ -49,8 +51,15 @@ class Sat_Model(nn.Module):
 
       # Working state -> TRAIN, TEST
       self._use_amp = False
+      self.mixup_factor = -1
+      self.activate_mixup = False
       self._step_timer  = CodeTimer(False)
       self._epoch_timer = CodeTimer(False)
+
+    ############ MIXUP ###############
+
+    def use_mixup(self):
+      return self.activate_mixup and self.mixup_factor >= 0 and self.mixup_factor <= 1
 
     ############ AMP ###############
 
@@ -88,10 +97,10 @@ class Sat_Model(nn.Module):
       self.step_timer  = activate
       self.epoch_timer = activate
 
-
     ############ WORKING STATE ###############
 
     def train_state(self):
+      self.activate_mixup = True
       self.train()
       self.current_iterator = iter(self.train_loader)
       self.current_iter_size = len(self.train_loader)
@@ -99,6 +108,7 @@ class Sat_Model(nn.Module):
       self.outer_state.state = "TRAIN"
     
     def eval_state(self):
+      self.activate_mixup = False
       self.eval()
       self.current_iterator  = iter(self.valid_loader)
       self.current_iter_size = len(self.valid_loader)
@@ -119,6 +129,8 @@ class Sat_Model(nn.Module):
       self._device = device
       self = self.to(device)
 
+    def to_device(self, *xs):
+      return [x.to(self.device) for x in xs]
 
     ############ LOADERS ###############
     
@@ -176,18 +188,30 @@ class Sat_Model(nn.Module):
 
     def forward_step(self):
       with autocast(enabled=self.use_amp):
-        input_batch, target_batch = next(self.current_iterator)
-        input_batch, target_batch = input_batch.to(self.device), target_batch.to(self.device)
-        logits_batch = self.forward(input_batch)
-        if self.postprocess:
-          self.outer_state.prediction = self.postprocess(logits_batch)
+        if self.use_mixup():
+          input_batch1, target_batch1 = next(self.current_iterator)
+          input_batch2, target_batch2 = next(self.current_iterator)
+          input_batch  = linear_combination(input_batch1, input_batch2, self.mixup_factor)
+          input_batch, target_batch1, target_batch2 = self.to_device(input_batch, target_batch1, target_batch2)
+          logits_batch = self.forward(input_batch)
+          loss1, loss2 = self.loss_function(logits_batch, target_batch1), self.loss_function(logits_batch, target_batch2)
+          batch_loss = linear_combination(loss1, loss2, self.mixup_factor)
+          ###
+          self.outer_state.prediction = self.postprocess(logits_batch) if self.postprocess else logits_batch.argmax(1)
+          self.outer_state.input = input_batch
+          self.outer_state.target = linear_combination(target_batch1, target_batch2, self.mixup_factor)
+          self.outer_state.logits = logits_batch
+          self.outer_state.loss = batch_loss
         else:
-          self.outer_state.prediction = logits_batch.argmax(1)
-        self.outer_state.loss = self.loss_function(logits_batch, target_batch)
-        # set the model's outer state
-        self.outer_state.input = input_batch
-        self.outer_state.target = target_batch
-        self.outer_state.logits = logits_batch
+          input_batch, target_batch = next(self.current_iterator)
+          input_batch, target_batch = self.to_device(input_batch, target_batch)
+          logits_batch = self.forward(input_batch)
+          self.outer_state.prediction = self.postprocess(logits_batch) if self.postprocess else logits_batch.argmax(1)
+          ###
+          self.outer_state.loss = self.loss_function(logits_batch, target_batch)
+          self.outer_state.input = input_batch
+          self.outer_state.target = target_batch
+          self.outer_state.logits = logits_batch
 
     def backward_step(self):
       scaled_batch_loss = self._scaler.scale(self.outer_state.loss) if self.use_amp else self.outer_state.loss
@@ -222,7 +246,6 @@ class Sat_Model(nn.Module):
           pbar.close()
       if epoch_clock.active: self.outer_state.push("epoch_time", epoch_clock.time)
       self.notify_observers("after_epoch")
-
       
     @torch.no_grad()
     def evaluate(self):
@@ -230,8 +253,7 @@ class Sat_Model(nn.Module):
       self.one_epoch()
 
     @safe_interruption
-    def fit(self, epochs, amp=False):
-      self.use_amp = amp
+    def fit(self, epochs):
       for self.outer_state.epoch in range(1, epochs+1):
         self.train_state()
         self.one_epoch()

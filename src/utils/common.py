@@ -60,6 +60,11 @@ def load_pickle(path: Path) -> pickle:
   return pickle_object
 
 def h_concatenate_images(img1, img2, is_pil=True):
+  if img1.size != img2.size:
+    size1,_ = img1.size
+    size2,_ = img2.size
+    if size1 < size2: img1 = img1.resize(img2.size)
+    else: img2 = img2.resize(img1.size)
   img1, img2 = np.array(img1), np.array(img2)
   if len(img1.shape) != 2 and len(img2.shape) == 2: img2 = cv2.cvtColor(img2, cv2.COLOR_GRAY2RGB)
   elif len(img1.shape) == 2 and len(img2.shape) != 2: img1 = cv2.cvtColor(img1, cv2.COLOR_GRAY2RGB)
