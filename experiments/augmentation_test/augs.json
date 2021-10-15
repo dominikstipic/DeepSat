@@ -1,0 +1,23 @@
+{
+"augs" : [
+	{
+		"src.transforms.augmentations.RandomCropper": {
+			"size": 448
+		}
+	},
+	{
+		"src.transforms.augmentations.ColorJitter": {
+			"brightness": 0.3, 
+			"contrast": 0.8,
+			"saturation": 0.3, 
+			"hue": 0.1
+		}
+	}, 
+	{
+		"src.transforms.augmentations.RandomRotation" :{
+			"rotation": [-180, 180]
+  		}
+	}
+]
+
+}
