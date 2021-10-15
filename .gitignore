@@ -10,6 +10,7 @@ runner.bash
 config.json
 email.json
 notebooks/*
+experiments/augmentation_test/configs
 
 # C extensions
 *.so
