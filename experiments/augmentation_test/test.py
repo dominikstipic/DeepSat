@@ -14,7 +14,7 @@ def get_augmentations(config: dict):
     return config["dataset_factory"]["augmentations"]["train"].copy()
 
 def get_config():
-    CONFIG_JSON = Path("experiments/augmentation_test/config.json")
+    CONFIG_JSON = Path("experiments/augmentation_test/exp.json")
     return common.read_json(CONFIG_JSON)
 
 def all_subsets(ss):
