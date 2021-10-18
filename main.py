@@ -89,6 +89,7 @@ def run(stage_name: str, config_path: Path):
 
 def run_pipeline_stage(stage_name: str, config_path: Path, previous_params: dict, current_params: dict, previous_phase_runned: bool, force_eval: bool):
     can_skip_stage = lambda previous_params, current_params: previous_params != None and current_params == previous_params
+    print(stage_name)
     if force_eval or not can_skip_stage(previous_params, current_params) or previous_phase_runned:
         run(stage_name, config_path)
         return True
@@ -108,7 +109,7 @@ def process(do_report: bool, do_version: bool, do_email: bool, force_eval: bool,
         runned_with_path = pip_stage_path / META_JSON
         current_params, previous_params = config[stage_name], common.read_json(runned_with_path)
         pipeline_runned = run_pipeline_stage(stage_name, config_path, previous_params, current_params, previous_phase_runned, force_eval)
-        previous_phase_runned = previous_phase_runned and pipeline_runned
+        previous_phase_runned = previous_phase_runned or pipeline_runned
     end = time.perf_counter_ns()
     time_min = to_min(end-start)
     print(f"TOTAL TIME: {time_min}")
