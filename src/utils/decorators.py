@@ -33,13 +33,12 @@ def timer(fun):
     return wrapper
 
 
-
 def safe_interruption(fun):
     @functools.wraps(fun)
     def wrapper(*argv, **kwargs):
         try:
             return fun(*argv, **kwargs)
-        except KeyboardInterrupt:
+        except Exception:
             print("Execution stoped")
     return wrapper
 

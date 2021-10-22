@@ -91,7 +91,8 @@ def run_pipeline_stage(stage_name: str, config_path: Path, previous_params: dict
     can_skip_stage = lambda previous_params, current_params: previous_params != None and current_params == previous_params
     print(stage_name)
     if force_eval or not can_skip_stage(previous_params, current_params) or previous_phase_runned:
-        shutil.rmtree(f"repository/{stage_name}")
+        stage_path = Path(f"repository/{stage_name}")
+        if stage_path.exists(): shutil.rmtree()
         run(stage_name, config_path)
         return True
     print(f"skipping: {stage_name}")
