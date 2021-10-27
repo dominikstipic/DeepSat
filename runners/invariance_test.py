@@ -8,6 +8,8 @@ import src.utils.pipeline_repository as pipeline_repository
 import src.utils.factory as factory
 import pipeline.invariance_test as invariance_test
 from runners.evaluation import get_model
+import runners.trainer as trainer
+
 
 FILE_NAME = Path(__file__).stem
 
@@ -45,6 +47,8 @@ def prepare_pip_arguments(config: dict, dataset_input: Path, model_input: Path, 
     args["dataset"] = get_dataset(dataset_input)
     args["model"]   = get_model(model_input)
     args["output_dir"] = output
+    args["device"] = config["device"]
+    args["observers_dict"] = trainer.get_observers(config["observers"])
     return args
 
 def process():
