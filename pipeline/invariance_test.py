@@ -10,6 +10,12 @@ def set_attribute(dataset, attribute_transform):
     compose = Compose([attribute_transform, tensor_transform])
     dataset.transform = compose
 
+def save_analysis_to_csv(results: dict, out_dir: Path):
+    identity_perf = results.pop("Identity")
+    domain_costs = {k: (identity_perf - attribute_perf) for k, attribute_perf in results.items()}
+    df = pd.DataFrame(list(domain_costs.items()), columns=["Domain Attribute", "Domain cost"])
+    path = out_dir / "analysis.csv"
+    df.to_csv(path)
 
 def process(dataset, model, device: str, attributes: list, observers_dict: dict, output_dir: Path):
     model.device = device
@@ -24,4 +30,7 @@ def process(dataset, model, device: str, attributes: list, observers_dict: dict,
         results = model.observer_results()
         attribute_name = type(attribute).__name__
         print(f"{attribute_name}-{results}") 
-        results[attribute_name] = results
+        results[attribute_name] = results["mIoU"]
+    save_analysis_to_csv(results, output_dir)
+    
+
