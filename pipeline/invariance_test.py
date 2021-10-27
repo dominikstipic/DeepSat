@@ -1,5 +1,6 @@
 from pathlib import Path
 import pandas as pd
+from runners import invariance_test
 
 from src.transforms.transforms import Compose
 import src.utils.pipeline_repository as pipeline_repository
@@ -11,7 +12,8 @@ def set_attribute(dataset, attribute_transform):
     dataset.transform = compose
 
 def save_analysis_to_csv(results: dict, out_dir: Path):
-    identity_perf = results.pop("Identity")
+    identity_key, identity_perf = [(k, v) for k,v in results.items() if "Identity" in k][0]
+    results.pop(identity_key)
     domain_costs = {k: (identity_perf - attribute_perf) for k, attribute_perf in results.items()}
     df = pd.DataFrame(list(domain_costs.items()), columns=["Domain Attribute", "Domain cost"])
     out_dir = pipeline_repository.create_dir_if_not_exist(out_dir)
