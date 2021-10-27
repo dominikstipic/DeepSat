@@ -155,3 +155,7 @@ class ColorJitter(object):
     return x,y
 
 #######################
+
+class Identity(object):
+  def __call__(self, xs):
+    return xs
