@@ -117,7 +117,14 @@ def _read_file(path: Path):
     elif endswith(CSV_EXT):
         pass
     elif endswith(PT_EXT):
-        obj = torch.load(path)
+        try: obj = torch.load(path)
+        except RuntimeError:
+            mess = """
+                      Couldn't load weight because this device doesn't support cuda. 
+                      Transfering weights to cpu. 
+                   """
+            print(mess)
+            obj = torch.load(path, map_location=torch.device("cpu"))
     elif endswith(PNG_EXT):
         obj = cv2.imread(path)
     else:
