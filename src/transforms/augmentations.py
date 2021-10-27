@@ -14,7 +14,7 @@ def shear_transform(img, shear):
     return torchvision.transforms.functional.affine(img, angle=0, translate=[0,0], scale=1, shear=shear)
 
 class AffineJitter(object):
-    def __init__ (self, rotation=[-5,5], scale=[0.7, 2], shear=[-5, 5]):
+    def __init__ (self, rotation, scale, shear):
         self.rotation_interval  = rotation
         self.scale_interval     = scale
         self.shear_interval     = shear
