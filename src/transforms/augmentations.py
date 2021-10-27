@@ -4,38 +4,50 @@ import numpy as np
 import torchvision
 import torchvision.transforms.functional as TF
 
-class Jitter(object):
-  def __init__ (self, rotation=[-5,5], scale=[0.7, 2]):
-    self.rotation  = rotation
-    self.scale_int = scale
+def rotation_transform(img, rot):
+    return torchvision.transforms.functional.affine(img, angle=rot, translate=[0,0], scale=1, shear=[0, 0])
+  
+def scale_transform(img, scale):
+    return torchvision.transforms.functional.affine(img, angle=0, translate=[0,0], scale=scale, shear=[0 ,0])
+
+def shear_transform(img, shear):
+    return torchvision.transforms.functional.affine(img, angle=0, translate=[0,0], scale=1, shear=shear)
+
+class AffineJitter(object):
+    def __init__ (self, rotation=[-5,5], scale=[0.7, 2], shear=[-5, 5]):
+        self.rotation_interval  = rotation
+        self.scale_interval     = scale
+        self.shear_interval     = shear
+
+    def get_rand(self, interval):
+        lower,upper = interval
+        return np.random.uniform(lower, upper)
+
+    def rand_rotate(self, xs):
+        x,y    = xs
+        degree = self.get_rand(self.rotation_interval)
+        tx,ty  = rotation_transform(x, degree), rotation_transform(y, degree)
+        return tx,ty
+  
+    def rand_scale(self, xs):
+        x,y   = xs
+        scale = self.get_rand(self.scale_interval)
+        tx,ty = scale_transform(x, scale), scale_transform(y, scale)
+        return tx, ty
     
-  def rot_transform(self, rot, img):
-    return TF.affine(img, angle = rot, translate=[0,0], scale = 1, shear = [0, 0])
-  
-  def scale_transform(self, s, img):
-    return TF.affine(img, angle = 0, translate=[0,0], scale = s, shear = [0 ,0])
+    def rand_shear(self, xs):
+        x,y   = xs
+        shear_x = self.get_rand(self.shear_interval)
+        shear_y = self.get_rand(self.shear_interval)
+        tx,ty = shear_transform(x, [shear_x, shear_y]), shear_transform(y, [shear_x, shear_y])
+        return tx, ty
 
-  def rotate(self, xs):
-    x,y    = xs
-    l,u    = self.rotation
-    degree = self.rand(l,u)
-    tx,ty  = self.rot_transform(degree,x), self.rot_transform(degree,y)
-    return tx,ty
-  
-  def scale(self, xs):
-    x,y = xs
-    l,u = self.scale_int
-    s   = self.rand(l,u)
-    tx,ty   = self.scale_transform(s,x), self.scale_transform(s,y)
-    return tx, ty
-  
-  def rand(self, lower, upper):
-    return np.random.uniform(lower, upper)
-
-  def __call__(self, xs):
-    x,y = self.rotate(xs)
-    x,y = self.scale([x,y])
-    return x,y
+    def __call__(self, xs):
+        x,y = xs
+        x,y = self.rand_rotate([x,y])
+        x,y = self.rand_scale([x,y])
+        x,y = self.rand_shear([x, y])
+        return x,y
 
 #######################
 
@@ -159,3 +171,18 @@ class ColorJitter(object):
 class Identity(object):
   def __call__(self, xs):
     return xs
+
+#######################
+
+class RandomErasing(object):
+  def __init__ (self, brightness, contrast, saturation, hue):
+    self.jitter = torchvision.transforms.ColorJitter(brightness=brightness,
+                                                     contrast=contrast,
+                                                     saturation=saturation,
+                                                     hue=hue)
+    
+  def __call__(self, xs):
+    x,y = xs
+    x = self.jitter(x)
+    return x,y
+
