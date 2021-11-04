@@ -7,6 +7,7 @@ import src.utils.pipeline_repository as pipeline_repository
 import src.utils.factory as factory
 import src.observers.metrics as metrics
 import pipeline.trainer as trainer
+import src.hypertuner as hypertuner
 
 FILE_NAME = Path(__file__).stem
 
@@ -40,6 +41,24 @@ def get_observers(observer_dict: dict):
             results[event_key].append(obs)
     return results
 
+##################
+
+def get_search_algorithm(search_alg_string: str):
+    if search_alg_string not in hypertuner.search_algs.keys():
+        raise RuntimeError("Search algorithm not available")
+    return hypertuner.search_algs[search_alg_string]
+
+def get_hypertuner(hypertuning_dict: dict):
+    search_space = hypertuning_dict["search_space"]
+    search_algorithm = get_search_algorithm(hypertuning_dict["search_alg"])
+    num_samples = hypertuning_dict["num_samples"]
+    resources_per_trial = hypertuning_dict["resources_per_trial"]
+    tuner = hypertuner.HyperTuner(search_space, search_algorithm, resources_per_trial, num_samples)
+    tuner.active = hypertuning_dict["active"]
+    return tuner
+
+##################
+
 def prepare_pip_arguments(config: dict, input: Path, output: Path):
     args = {} 
     args["model"] = factory.import_object(config['model'])
@@ -54,7 +73,7 @@ def prepare_pip_arguments(config: dict, input: Path, output: Path):
     args["amp"] = config["amp"]
     args["mixup_factor"] = config["mixup_factor"]
     args["output_dir"] = output
-    args["hiper_optim"] = config["hiper_optim"]
+    args["hypertuner"] = get_hypertuner(config["hypertuning"])
     return args
 
 def process():

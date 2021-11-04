@@ -4,6 +4,8 @@ import numpy as np
 import torchvision
 import torchvision.transforms.functional as TF
 
+#######################
+
 def rotation_transform(img, rot):
     return torchvision.transforms.functional.affine(img, angle=rot, translate=[0,0], scale=1, shear=[0, 0])
   
@@ -186,3 +188,4 @@ class RandomErasing(object):
     x = self.jitter(x)
     return x,y
 
+#######################

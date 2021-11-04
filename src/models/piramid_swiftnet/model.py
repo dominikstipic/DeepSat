@@ -23,12 +23,14 @@ class PiramidSwiftnet(Sat_Model):
   def fine_tune_params(self):
     return self.backbone.fine_tune_params()
 
+  def copy(self):
+    other = self(self.num_classes)
+    other.__dict__ = self.__dict__
+    return other
+    
   def forward(self, image):
     image_size = image.shape[-2:]
     features,_ = self.backbone(image)
     logits = self.logits.forward(features)
     logits = piramid_resnet.upsample_bilinear(logits, image_size)
     return logits
-
-
-  
