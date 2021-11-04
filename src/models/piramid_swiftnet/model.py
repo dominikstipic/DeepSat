@@ -24,7 +24,7 @@ class PiramidSwiftnet(Sat_Model):
     return self.backbone.fine_tune_params()
 
   def copy(self):
-    other = self(self.num_classes)
+    other = self.__class__(self.num_classes)
     other.__dict__ = self.__dict__
     return other
     

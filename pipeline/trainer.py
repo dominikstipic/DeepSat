@@ -28,21 +28,22 @@ def build_model(model, optimizer, config: dict):
                "weight_decay": config["wd2"],
                "betas": (config["beta21"], config["beta22"])}
              ]
-    new_optimizer = optimizer.__init__(**params)
+    new_optimizer = optimizer.__class__(params)
     new_model.optimizer = new_optimizer
     return new_model
 
 def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, hypertuner: HyperTuner, output_dir: Path):
     def _hy_trainable(config):
-        model = build_model(model, optimizer, config)
+        new_model = build_model(model, optimizer, config)
         train_dl, valid_dl = loader_dict["train"], loader_dict["valid"]
-        model.train_loader, model.valid_loader = train_dl, valid_dl
-        model.train_state()
-        model.one_epoch()
-        model.evaluate()
-        results = model.observer_results()
-        mIoU = results["mIoU"]
-        tune.report(performance=mIoU)
+        new_model.train_loader, new_model.valid_loader = train_dl, valid_dl
+        new_model.train_state()
+        for _ in range(1):
+            new_model.one_epoch()
+            new_model.evaluate()
+            results = new_model.observer_results()
+            mIoU = results["mIoU"]
+            tune.report(performance=mIoU)
     model.optimizer = optimizer
     model.scheduler = lr_scheduler
     model.loss_function = loss_function
