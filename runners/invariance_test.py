@@ -43,7 +43,8 @@ def get_dataset(dataset_path: Path):
 def prepare_pip_arguments(config: dict, dataset_input: Path, model_input: Path, output: Path):
     args = {}
     attributes = config["attributes"]
-    args["attributes"] = [factory.import_object(attribute_dict) for attribute_dict in attributes]
+    attributes_tf = [factory.import_object(attribute_dict) for attribute_dict in attributes]
+    args["attributes"] = list(zip(attributes, attributes_tf))
     args["dataset"] = get_dataset(dataset_input)
     args["model"]   = get_model(model_input)
     args["output_dir"] = output
