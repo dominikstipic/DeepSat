@@ -172,17 +172,4 @@ class Identity(object):
   def __call__(self, xs):
     return xs
 
-#######################
-
-class RandomErasing(object):
-  def __init__ (self, brightness, contrast, saturation, hue):
-    self.jitter = torchvision.transforms.ColorJitter(brightness=brightness,
-                                                     contrast=contrast,
-                                                     saturation=saturation,
-                                                     hue=hue)
-    
-  def __call__(self, xs):
-    x,y = xs
-    x = self.jitter(x)
-    return x,y
 
