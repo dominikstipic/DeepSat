@@ -2,12 +2,15 @@ from pathlib import Path
 import copy
 import argparse
 
+import ray
+
 from . import shared_logic as shared_logic
 import src.utils.pipeline_repository as pipeline_repository
 import src.utils.factory as factory
 import src.observers.metrics as metrics
 import pipeline.trainer as trainer
 import src.hypertuner as hypertuner
+import src.utils.compiler.actions as actions
 
 FILE_NAME = Path(__file__).stem
 
@@ -49,7 +52,9 @@ def get_search_algorithm(search_alg_string: str):
     return hypertuner.search_algs[search_alg_string]
 
 def get_hypertuner(hypertuning_dict: dict):
-    search_space = hypertuning_dict["search_space"]
+    eval_action = actions.eval_action_init({"ray":ray})
+    hs = hypertuning_dict["search_space"]
+    search_space = {k: eval_action(v) for k,v in hs.items()}
     search_algorithm = get_search_algorithm(hypertuning_dict["search_alg"])
     num_samples = hypertuning_dict["num_samples"]
     resources_per_trial = hypertuning_dict["resources_per_trial"]
