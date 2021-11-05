@@ -1,3 +1,4 @@
+from os import pipe
 from pathlib import Path
 
 import torch
@@ -59,10 +60,13 @@ def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loa
     model.mixup_factor = mixup_factor
     if hypertuner.active:
         hyper_df = hypertuner.run(_hy_trainable)
-        hyper_path = pipeline_repository.get_path("trainer/artifacts") / "hyper.csv"
+
+        hyper_path = pipeline_repository.get_path(Path("trainer/artifacts"))
+        pipeline_repository.create_dir_if_not_exist(hyper_path)
+        hyper_path = hyper_path / "hyper.csv"
         hyper_df.to_csv(str(hyper_path))
         best = hypertuner.analysis.best_result["config"]
-        model = build_model(model, optimizer, best)
+        build_model(model, optimizer, best)
     model.observers = observers_dict
     model.fit(epochs=epochs)
     output_dir = pipeline_repository.create_dir_if_not_exist(output_dir)
