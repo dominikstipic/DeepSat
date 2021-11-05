@@ -97,7 +97,7 @@ def _create_split_datasets(dataset, tensor_tf_dict: dict, aug_dict: dict, splits
             dataset_copy.data = imgs
             dataset_copy.labels = masks
         else:
-            dataset_copy.tars = split_paths
+            dataset_copy.tars = [Path(p).resolve() for p in split_paths]
         dataset_copy.transform  = split_transform
         datasets[split_name] = dataset_copy
     return datasets

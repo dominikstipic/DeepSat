@@ -4,7 +4,10 @@ import torch
 import ray.tune as tune
 
 import src.utils.pipeline_repository as pipeline_repository
+import src.observers.subscribers as subscribers
+import src.observers.metrics as metrics
 from src.hypertuner import HyperTuner
+
 
 FILE_NAME = Path(__file__).stem
 _MODEL_NAME = "model.pickle"
@@ -17,37 +20,35 @@ def get_model():
     return model
 
 def build_model(model, optimizer, config: dict):
-    new_model = model.copy()
+    cm = subscribers.Confusion_Matrix(class_num=2, metrics=[metrics.mIoU])
+    model.observers={"after_epoch": [], "after_step": [cm], "before_step": [], "before_epoch": []}
     params = [
-              {"params": new_model.random_init_params(), 
+              {"params": model.random_init_params(), 
                "lr": config["lr1"],
                "weight_decay": config["wd1"],
                "betas": (config["beta11"], config["beta12"])},
-              {"params": new_model.fine_tune_params(), 
+              {"params": model.fine_tune_params(), 
                "lr": config["lr2"],
                "weight_decay": config["wd2"],
                "betas": (config["beta21"], config["beta22"])}
              ]
     new_optimizer = optimizer.__class__(params)
-    new_model.optimizer = new_optimizer
-    return new_model
+    model.optimizer = new_optimizer
 
 def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, hypertuner: HyperTuner, output_dir: Path):
-    def _hy_trainable(config):
-        new_model = build_model(model, optimizer, config)
-        train_dl, valid_dl = loader_dict["train"], loader_dict["valid"]
-        new_model.train_loader, new_model.valid_loader = train_dl, valid_dl
-        new_model.train_state()
+    def _hy_trainable(config, checkpoint_dir=None):
+        build_model(model, optimizer, config)
+        model.train_loader, model.valid_loader = loader_dict["train"], loader_dict["valid"]
+        model.train_state()
         for _ in range(1):
-            new_model.one_epoch()
-            new_model.evaluate()
-            results = new_model.observer_results()
+            model.one_epoch()
+            model.evaluate()
+            results = model.observer_results()
             mIoU = results["mIoU"]
             tune.report(performance=mIoU)
     model.optimizer = optimizer
     model.scheduler = lr_scheduler
     model.loss_function = loss_function
-    model.observers = observers_dict
     model.train_loader = loader_dict["train"]
     if "valid" in loader_dict.keys():
         model.valid_loader = loader_dict["valid"]
@@ -62,6 +63,7 @@ def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loa
         hyper_df.to_csv(str(hyper_path))
         best = hypertuner.analysis.best_result["config"]
         model = build_model(model, optimizer, best)
+    model.observers = observers_dict
     model.fit(epochs=epochs)
     output_dir = pipeline_repository.create_dir_if_not_exist(output_dir)
     output_path = pipeline_repository.get_path(output_dir / _WEIGHTS_NAME)
