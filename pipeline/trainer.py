@@ -1,5 +1,5 @@
-from os import pipe
 from pathlib import Path
+from functools import partial
 
 import torch
 import ray.tune as tune
@@ -21,7 +21,7 @@ def get_model():
     return model
 
 def build_model(model, optimizer, config: dict):
-    cm = subscribers.Confusion_Matrix(class_num=2, metrics=[metrics.mIoU])
+    cm = subscribers.Confusion_Matrix(class_num=model.num_classes, metrics=[metrics.mIoU])
     model.observers={"after_epoch": [], "after_step": [cm], "before_step": [], "before_epoch": []}
     params = [
               {"params": model.random_init_params(), 
@@ -36,10 +36,9 @@ def build_model(model, optimizer, config: dict):
     new_optimizer = optimizer.__class__(params)
     model.optimizer = new_optimizer
 
-def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, hypertuner: HyperTuner, output_dir: Path):
-    def _hy_trainable(config, checkpoint_dir=None):
+def _hy_trainable(config, model, optimizer, train_loader, valid_loader):
         build_model(model, optimizer, config)
-        model.train_loader, model.valid_loader = loader_dict["train"], loader_dict["valid"]
+        model.train_loader, model.valid_loader = train_loader, valid_loader
         model.train_state()
         for _ in range(1):
             model.one_epoch()
@@ -47,6 +46,8 @@ def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loa
             results = model.observer_results()
             mIoU = results["mIoU"]
             tune.report(performance=mIoU)
+
+def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, hypertuner: HyperTuner, output_dir: Path):
     model.optimizer = optimizer
     model.scheduler = lr_scheduler
     model.loss_function = loss_function
@@ -59,7 +60,8 @@ def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loa
     model.use_amp = amp
     model.mixup_factor = mixup_factor
     if hypertuner.active:
-        hyper_df = hypertuner.run(_hy_trainable)
+        partial_trainable = partial(_hy_trainable, model=model, optimizer=optimizer, train_loader=loader_dict["train"], valid_loader=loader_dict["valid"])
+        hyper_df = hypertuner.run(partial_trainable)
         hyper_path = pipeline_repository.get_path(Path("trainer/artifacts"))
         pipeline_repository.create_dir_if_not_exist(hyper_path)
         hyper_path = hyper_path / "hyper.csv"
