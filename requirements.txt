@@ -16,3 +16,4 @@ ipython==7.28.0
 ipykernel==6.4.1
 ray==1.8.0
 bayesian-optimization==1.2.0
+GPUtil==1.4.0
