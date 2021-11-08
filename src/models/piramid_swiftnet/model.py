@@ -25,7 +25,6 @@ class PiramidSwiftnet(Sat_Model):
 
   def copy(self):
     other = self.__class__(self.num_classes)
-    other.__dict__ = self.__dict__
     return other
     
   def forward(self, image):

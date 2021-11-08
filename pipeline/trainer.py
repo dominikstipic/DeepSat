@@ -8,7 +8,8 @@ import src.utils.pipeline_repository as pipeline_repository
 import src.observers.subscribers as subscribers
 import src.observers.metrics as metrics
 from src.hypertuner import HyperTuner
-
+import src.observers.subscribers as subscribers 
+import src.observers.metrics as metrics 
 
 FILE_NAME = Path(__file__).stem
 _MODEL_NAME = "model.pickle"
@@ -20,9 +21,7 @@ def get_model():
     model.load_state_dict(weights)
     return model
 
-def build_model(model, optimizer, config: dict):
-    cm = subscribers.Confusion_Matrix(class_num=model.num_classes, metrics=[metrics.mIoU])
-    model.observers={"after_epoch": [], "after_step": [cm], "before_step": [], "before_epoch": []}
+def build_optimizer(model, optimizer, config):
     params = [
               {"params": model.random_init_params(), 
                "lr": config["lr1"],
@@ -33,19 +32,46 @@ def build_model(model, optimizer, config: dict):
                "weight_decay": config["wd2"],
                "betas": (config["beta21"], config["beta22"])}
              ]
-    new_optimizer = optimizer.__class__(params)
-    model.optimizer = new_optimizer
+    return optimizer.__class__(params)
 
-def _hy_trainable(config, model, optimizer, train_loader, valid_loader):
-        build_model(model, optimizer, config)
-        model.train_loader, model.valid_loader = train_loader, valid_loader
-        model.train_state()
-        for _ in range(1):
-            model.one_epoch()
-            model.evaluate()
-            results = model.observer_results()
-            mIoU = results["mIoU"]
-            tune.report(performance=mIoU)
+def build_model(config: dict, model, optimizer, loss_function: torch.nn, device: str, train_loader, valid_loader):
+    model = model.copy()
+    cm = subscribers.Confusion_Matrix(class_num=model.num_classes, metrics=[metrics.mIoU])
+    model.observers={"after_epoch": [], "after_step": [cm], "before_step": [], "before_epoch": []}
+    model.optimizer = build_optimizer(model, optimizer, config)
+    model.loss_function = loss_function
+    model.device = device
+    model.train_loader, model.valid_loader = train_loader, valid_loader
+    return model
+
+def optimal_model(model, optimizer, loss_function, device, hypertuner):
+    model_builder = partial(build_model, 
+                            model=model, 
+                            optimizer=optimizer,
+                            loss_function=loss_function,
+                            device=device, 
+                            train_loader=model.train_loader, 
+                            valid_loader=model.valid_loader)
+    partial_trainable = partial(_hy_trainable, model_factory=model_builder)
+    hyper_df = hypertuner.run(partial_trainable)
+    hyper_path = pipeline_repository.get_path(Path("trainer/artifacts"))
+    pipeline_repository.create_dir_if_not_exist(hyper_path)
+    hyper_path = hyper_path / "hyper.csv"
+    hyper_df.to_csv(str(hyper_path))
+    best = hypertuner.analysis.best_result["config"]
+    model.optimizer = build_optimizer(model, optimizer, best)
+    return model
+
+def _hy_trainable(config, model_factory):
+    tune.utils.wait_for_gpu(target_util=0)
+    model = model_factory(config)
+    model.train_state()
+    for _ in range(1):
+        model.one_epoch()
+        model.evaluate()
+        results = model.observer_results()
+        mIoU = results["mIoU"]
+        tune.report(performance=mIoU)
 
 def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, hypertuner: HyperTuner, output_dir: Path):
     model.optimizer = optimizer
@@ -56,19 +82,12 @@ def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loa
         model.valid_loader = loader_dict["valid"]
     model.device = "cpu"
     pipeline_repository.push_pickled_obj(FILE_NAME, "output", model, _MODEL_NAME)
+    if hypertuner.active:
+        model = optimal_model(model, optimizer, loss_function, device, hypertuner)
+    model.observers = observers_dict
     model.device = device
     model.use_amp = amp
     model.mixup_factor = mixup_factor
-    if hypertuner.active:
-        partial_trainable = partial(_hy_trainable, model=model, optimizer=optimizer, train_loader=loader_dict["train"], valid_loader=loader_dict["valid"])
-        hyper_df = hypertuner.run(partial_trainable)
-        hyper_path = pipeline_repository.get_path(Path("trainer/artifacts"))
-        pipeline_repository.create_dir_if_not_exist(hyper_path)
-        hyper_path = hyper_path / "hyper.csv"
-        hyper_df.to_csv(str(hyper_path))
-        best = hypertuner.analysis.best_result["config"]
-        build_model(model, optimizer, best)
-    model.observers = observers_dict
     model.fit(epochs=epochs)
     output_dir = pipeline_repository.create_dir_if_not_exist(output_dir)
     output_path = pipeline_repository.get_path(output_dir / _WEIGHTS_NAME)

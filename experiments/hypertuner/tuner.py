@@ -4,7 +4,6 @@ from functools import partial
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
 from ray import tune
 from ray.tune.suggest.basic_variant import BasicVariantGenerator
 
