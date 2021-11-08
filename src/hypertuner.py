@@ -26,6 +26,7 @@ class HyperTuner:
                                  num_samples=self.num_samples,
                                  metric="performance",
                                  mode="max",
+                                 log_to_file=True,
                                  verbose=0)
         df = self.analysis.results_df
         return df
