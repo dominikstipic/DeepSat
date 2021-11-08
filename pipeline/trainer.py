@@ -1,6 +1,5 @@
 from pathlib import Path
 from functools import partial
-from ray.tune import trainable
 
 import torch
 import ray.tune as tune
@@ -53,7 +52,8 @@ def optimal_model(model, optimizer, loss_function, device, hypertuner):
                             device=device, 
                             train_loader=model.train_loader, 
                             valid_loader=model.valid_loader)
-    trainable = tune.with_parameters(_hy_trainable, model_factory=model_builder)
+    trainable = partial(_hy_trainable, iterations=hypertuner.iterations)
+    trainable = tune.with_parameters(trainable, model_factory=model_builder)
     hyper_df = hypertuner.run(trainable)
     hyper_path = pipeline_repository.get_path(Path("trainer/artifacts"))
     pipeline_repository.create_dir_if_not_exist(hyper_path)
@@ -63,11 +63,11 @@ def optimal_model(model, optimizer, loss_function, device, hypertuner):
     model.optimizer = build_optimizer(model, optimizer, best)
     return model
 
-def _hy_trainable(config, model_factory):
+def _hy_trainable(config, iterations, model_factory):
     tune.utils.wait_for_gpu(target_util=0)
     model = model_factory(config)
     model.train_state()
-    for _ in range(1):
+    for _ in range(iterations):
         model.one_epoch()
         model.evaluate()
         results = model.observer_results()

@@ -58,7 +58,8 @@ def get_hypertuner(hypertuning_dict: dict):
     search_algorithm = get_search_algorithm(hypertuning_dict["search_alg"])
     num_samples = hypertuning_dict["num_samples"]
     resources_per_trial = hypertuning_dict["resources_per_trial"]
-    tuner = hypertuner.HyperTuner(search_space, search_algorithm, resources_per_trial, num_samples)
+    iters = hypertuning_dict["iterations"]
+    tuner = hypertuner.HyperTuner(search_space, search_algorithm, resources_per_trial, num_samples, iters)
     tuner.active = hypertuning_dict["active"]
     return tuner
 
