@@ -78,7 +78,7 @@ def prepare_pip_arguments(config: dict, input: Path, output: Path):
     args["amp"] = config["amp"]
     args["mixup_factor"] = config["mixup_factor"]
     args["output_dir"] = output
-    args["hypertuner"] = get_hypertuner(config["hypertuning"])
+    args["hypertuner"] = get_hypertuner(config["hypertuner"])
     return args
 
 def process():

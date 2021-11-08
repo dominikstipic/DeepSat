@@ -60,7 +60,6 @@ def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loa
     model.mixup_factor = mixup_factor
     if hypertuner.active:
         hyper_df = hypertuner.run(_hy_trainable)
-
         hyper_path = pipeline_repository.get_path(Path("trainer/artifacts"))
         pipeline_repository.create_dir_if_not_exist(hyper_path)
         hyper_path = hyper_path / "hyper.csv"
