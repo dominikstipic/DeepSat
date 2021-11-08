@@ -1,5 +1,6 @@
 from pathlib import Path
 from functools import partial
+from ray.tune import trainable
 
 import torch
 import ray.tune as tune
@@ -52,8 +53,8 @@ def optimal_model(model, optimizer, loss_function, device, hypertuner):
                             device=device, 
                             train_loader=model.train_loader, 
                             valid_loader=model.valid_loader)
-    partial_trainable = partial(_hy_trainable, model_factory=model_builder)
-    hyper_df = hypertuner.run(partial_trainable)
+    trainable = tune.with_parameters(_hy_trainable, model_factory=model_builder)
+    hyper_df = hypertuner.run(trainable)
     hyper_path = pipeline_repository.get_path(Path("trainer/artifacts"))
     pipeline_repository.create_dir_if_not_exist(hyper_path)
     hyper_path = hyper_path / "hyper.csv"
