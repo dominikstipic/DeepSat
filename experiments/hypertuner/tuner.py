@@ -83,3 +83,7 @@ analysis = tune.run(
   num_samples=1,
   verbose=0, 
   checkpoint_at_end=False)
+
+df = analysis.results_df
+df.to_csv("data.csv")
+
