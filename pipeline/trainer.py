@@ -77,7 +77,7 @@ def _hy_trainable(config, iterations, model_factory):
     model.after_epoch_hook = hook_fun(model)
     model.fit(iterations)
     
-def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, hypertuner: HyperTuner, output_dir: Path):
+def process(active: bool, epochs: int, amp: bool, mixup_factor: float, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, hypertuner: HyperTuner, output_dir: Path):
     model.optimizer = optimizer
     model.scheduler = lr_scheduler
     model.loss_function = loss_function
@@ -91,7 +91,8 @@ def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loa
     model.device = device
     model.use_amp = amp
     model.mixup_factor = mixup_factor
-    model.fit(epochs=epochs)
-    output_dir = pipeline_repository.create_dir_if_not_exist(output_dir)
-    output_path = pipeline_repository.get_path(output_dir / _WEIGHTS_NAME)
-    torch.save(model.state_dict(), str(output_path))
+    if active:
+        model.fit(epochs=epochs)
+        output_dir = pipeline_repository.create_dir_if_not_exist(output_dir)
+        output_path = pipeline_repository.get_path(output_dir / _WEIGHTS_NAME)
+        torch.save(model.state_dict(), str(output_path))
