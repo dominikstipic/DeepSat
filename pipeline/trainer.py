@@ -40,7 +40,7 @@ def build_model(config: dict, model, optimizer, lr_scheduler, loss_function: tor
     model.observers={"after_epoch": [], "after_step": [cm], "before_step": [], "before_epoch": []}
     model.optimizer = build_optimizer(model, optimizer, config)
     model.loss_function = loss_function
-    model.scheduler = lr_scheduler
+    model.scheduler = lr_scheduler.__class__(model.optimizer, T_max=lr_scheduler.T_max)
     model.device = device
     model.train_loader, model.valid_loader = train_loader, valid_loader
     return model
