@@ -271,5 +271,5 @@ class Sat_Model(nn.Module):
         self.reset_observers()
         if self.valid_loader: self.evaluate()
         if self.scheduler: self.scheduler.step()
-        self.reset_observers() 
         self.after_epoch_hook()
+        self.reset_observers() 
