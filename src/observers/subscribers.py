@@ -106,8 +106,8 @@ class StdPrinter(Subscriber):
     def __init__(self, when=None):
         Subscriber.__init__(self, when)
 
-    def update(self, epoch, metrics, **kwargs):
-        print(f"epoch : {epoch}")
+    def update(self, epoch, metrics, state, **kwargs):
+        print(f"state: {state}, epoch: {epoch}")
         pprint(metrics)
         print("*******")
 

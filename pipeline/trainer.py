@@ -34,20 +34,22 @@ def build_optimizer(model, optimizer, config):
              ]
     return optimizer.__class__(params)
 
-def build_model(config: dict, model, optimizer, loss_function: torch.nn, device: str, train_loader, valid_loader):
+def build_model(config: dict, model, optimizer, lr_scheduler, loss_function: torch.nn, device: str, train_loader, valid_loader):
     model = model.copy()
-    cm = subscribers.Confusion_Matrix(class_num=model.num_classes, metrics=[metrics.mIoU])
+    cm = subscribers.Confusion_Matrix(class_num=model.num_classes, metrics=[metrics.mIoU], when="TEST")
     model.observers={"after_epoch": [], "after_step": [cm], "before_step": [], "before_epoch": []}
     model.optimizer = build_optimizer(model, optimizer, config)
     model.loss_function = loss_function
+    model.scheduler = lr_scheduler
     model.device = device
     model.train_loader, model.valid_loader = train_loader, valid_loader
     return model
 
-def optimal_model(model, optimizer, loss_function, device, hypertuner):
+def optimal_model(model, optimizer, lr_scheduler, loss_function, device, hypertuner):
     model_builder = partial(build_model, 
                             model=model, 
                             optimizer=optimizer,
+                            lr_scheduler=lr_scheduler,
                             loss_function=loss_function,
                             device=device, 
                             train_loader=model.train_loader, 
@@ -66,14 +68,15 @@ def optimal_model(model, optimizer, loss_function, device, hypertuner):
 def _hy_trainable(config, iterations, model_factory):
     tune.utils.wait_for_gpu(target_util=0)
     model = model_factory(config)
-    model.train_state()
-    for _ in range(iterations):
-        model.one_epoch()
-        model.evaluate()
-        results = model.observer_results()
-        mIoU = results["mIoU"]
-        tune.report(performance=mIoU)
-
+    def hook_fun(self):
+        def inner():
+            results = self.observer_results()
+            mIoU = results["mIoU"]
+            tune.report(performance=mIoU)
+        return inner
+    model.after_epoch_hook = hook_fun(model)
+    model.fit(iterations)
+    
 def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loader_dict: dict, loss_function, optimizer, lr_scheduler, observers_dict: dict, hypertuner: HyperTuner, output_dir: Path):
     model.optimizer = optimizer
     model.scheduler = lr_scheduler
@@ -81,10 +84,9 @@ def process(epochs: int, amp: bool, mixup_factor: float, device: str, model, loa
     model.train_loader = loader_dict["train"]
     if "valid" in loader_dict.keys():
         model.valid_loader = loader_dict["valid"]
-    model.device = "cpu"
     pipeline_repository.push_pickled_obj(FILE_NAME, "output", model, _MODEL_NAME)
     if hypertuner.active:
-        model = optimal_model(model, optimizer, loss_function, device, hypertuner)
+        model = optimal_model(model, optimizer, lr_scheduler, loss_function, device, hypertuner)
     model.observers = observers_dict
     model.device = device
     model.use_amp = amp

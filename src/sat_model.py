@@ -247,17 +247,29 @@ class Sat_Model(nn.Module):
           pbar.close()
       if epoch_clock.active: self.outer_state.push("epoch_time", epoch_clock.time)
       self.notify_observers("after_epoch")
-      
+
+    def train_epoch(self):
+      self.train_state()
+      self.one_epoch()
+
     @torch.no_grad()
     def evaluate(self):
-      self.eval_state()           
+      self.eval_state()  
       self.one_epoch()
+    
+    def before_epoch_hook(self):
+      pass
+
+    def after_epoch_hook(self):
+      pass
 
     @safe_interruption
     def fit(self, epochs):
       for self.outer_state.epoch in range(1, epochs+1):
-        self.train_state()
-        self.one_epoch()
+        self.before_epoch_hook()
+        self.train_epoch()
         self.reset_observers()
         if self.valid_loader: self.evaluate()
         if self.scheduler: self.scheduler.step()
+        self.reset_observers() 
+        self.after_epoch_hook()
