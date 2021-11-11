@@ -1,5 +1,8 @@
 
 class Dataset():
+    mean = None
+    std  = None
+    
     def __len__(self):
         pass
     

@@ -11,9 +11,16 @@ from src.utils.common import merge_list_2d, unpack_tar_archive_for_paths
 IDENTITY = lambda x : x
 
 class TarDataset(torch.utils.data.IterableDataset):
+    mean = None
+    std  = None
+
     def __init__(self, path: Path, transform=IDENTITY):
         super().__init__()
-        self.tars = list(pathlib.Path(path).iterdir())
+        path = Path(path)
+        if not path.exists(): 
+            raise RuntimeError("The given path doesn't exist.")
+        self.path = path.resolve()
+        self.tars = list(self.path.iterdir())
         self.transform = transform
         self.length = None
 
@@ -32,7 +39,7 @@ class TarDataset(torch.utils.data.IterableDataset):
         paths = sorted(paths)
         return paths
 
-    def tar_generator(self, path):
+    def tar_generator(self, path: Path):
         with tarfile.open(path, "r") as tar:
             for tar_info in tar:
                 file = tar.extractfile(tar_info)
@@ -41,7 +48,7 @@ class TarDataset(torch.utils.data.IterableDataset):
                 yield pil_image, tar_info.path
     
     def copy(self):
-        path = self.tars[0].parent
+        path = self.path
         return TarDataset(path, self.transform)
 
     def get_example(self, gen):
@@ -52,7 +59,7 @@ class TarDataset(torch.utils.data.IterableDataset):
 
     def __iter__(self):
         for tar in self.tars:
-            gen = self.tar_generator(str(tar))
+            gen = self.tar_generator(tar)
             try:
                 while True:
                     img, mask = self.get_example(gen)
