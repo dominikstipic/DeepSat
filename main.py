@@ -103,6 +103,7 @@ def process(do_report: bool, do_version: bool, do_email: bool, force_eval: bool,
     pipeline_stages = config.keys()
     start = time.perf_counter_ns()
     to_min = lambda t : t / (1e9 * 60)
+    print(f"DATA PATH: {data_path}")
     if not Path(data_path).exists() or len(list(Path(data_path).iterdir())) == 0:
         raise RuntimeError("cannot find dataset on which system will learn")
     previous_phase_runned = False
