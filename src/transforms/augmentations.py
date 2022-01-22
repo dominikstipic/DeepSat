@@ -7,7 +7,7 @@ import torchvision.transforms.functional as TF
 #######################
 
 def rotation_transform(img, rot):
-    return torchvision.transforms.functional.affine(img, angle=rot, translate=[0,0], scale=1, shear=[0, 0])
+    return torchvision.transforms.functional.affine(img, angle=rot, translate=[0,0], scale=1, shear=0)
   
 def scale_transform(img, scale):
     return torchvision.transforms.functional.affine(img, angle=0, translate=[0,0], scale=scale, shear=[0 ,0])
