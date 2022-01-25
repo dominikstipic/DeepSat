@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as func
+import numpy as np
+import cv2  
 
 class Focal_Loss(nn.Module):
     types = ["exp", "poly"]
@@ -39,5 +41,30 @@ class Focal_Loss(nn.Module):
             loss = loss
         return loss
     
+class Weighted_Loss(nn.Module):
+    def __init__(self, sigma, const):
+        super(Weighted_Loss, self).__init__()
+        self.eps = torch.finfo(torch.float32).eps
+        self.sigma = sigma
+        self.const = const
     
+    def weighted_loss(self, logits, mask, sigma=3, const=200, eps=torch.finfo(torch.float32).eps):
+        logits, mask = logits.squeeze(), mask.squeeze()
+        mask_np = np.array(mask.squeeze(), dtype=np.uint8)
+        contours, _= cv2.findContours(mask_np, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        zeros = np.zeros_like(mask)
+        W = cv2.drawContours(zeros, contours, -1, (1), 3)
+        W = cv2.GaussianBlur(W, (0, 0), sigma, sigma, cv2.BORDER_DEFAULT)*const
+        W = torch.tensor(W).float()
+        probs = torch.nn.functional.softmax(logits)
+        epsilon = torch.ones_like(probs)*eps
+        loss = mask.float() * torch.log(probs+epsilon) + (1-mask.float())*torch.log(1-probs+epsilon)
+        weighted_loss = -(W*loss).sum()
+        return weighted_loss 
 
+    def forward(self, logits_batch, targets_batch):
+        losses = [self.weighted_loss(logits, target) for logits, target in zip(logits_batch, targets_batch)]
+        mean_loss = sum(losses)/len(losses)
+        return mean_loss
+    
+    
