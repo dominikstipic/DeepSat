@@ -48,21 +48,27 @@ class Weighted_Loss(nn.Module):
         self.sigma = sigma
         self.const = const
     
+    def true_probs(self, probs, mask):
+        mask_oh = torch.nn.functional.one_hot(mask, 2).permute(2,0,1)
+        res, _= (probs * mask_oh).max(0)
+        return res.reshape(*mask.shape).float()
+
     def weighted_loss(self, logits, mask, sigma=3, const=200, eps=torch.finfo(torch.float32).eps):
-        logits, mask = logits.squeeze(), mask.squeeze()
         mask_np = np.array(mask.squeeze(), dtype=np.uint8)
         contours, _= cv2.findContours(mask_np, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        zeros = np.zeros_like(mask)
+        zeros = np.zeros_like(mask, dtype=np.uint8)
         W = cv2.drawContours(zeros, contours, -1, (1), 3)
         W = cv2.GaussianBlur(W, (0, 0), sigma, sigma, cv2.BORDER_DEFAULT)*const
         W = torch.tensor(W).float()
-        probs = torch.nn.functional.softmax(logits)
-        epsilon = torch.ones_like(probs)*eps
-        loss = mask.float() * torch.log(probs+epsilon) + (1-mask.float())*torch.log(1-probs+epsilon)
+        probs = torch.nn.functional.softmax(logits, dim=0)
+        probs_oh, mask = self.true_probs(probs, mask), mask.squeeze()
+        epsilon = torch.ones_like(probs_oh)*eps
+        loss = mask.float() * torch.log(probs_oh+epsilon) + (1-mask.float())*torch.log(1-probs_oh+epsilon)
         weighted_loss = -(W*loss).sum()
         return weighted_loss 
 
     def forward(self, logits_batch, targets_batch):
+        logits_batch, targets_batch = logits_batch.clone().cpu(), targets_batch.clone().cpu()
         losses = [self.weighted_loss(logits, target) for logits, target in zip(logits_batch, targets_batch)]
         mean_loss = sum(losses)/len(losses)
         return mean_loss
