@@ -59,7 +59,19 @@ class Sat_Dataset(torch.utils.data.Dataset):
         d = dict(length=N, mean=mean.numpy(), std=std.numpy(), channels=c, height=h, width=w)
         return d
 
-    
+    def normalize(self):
+      channel_sum, channel_sum_sq = torch.zeros(3), torch.zeros(3)
+      examples = len(self)
+      with torch.no_grad():
+        for X,_ in self:
+          X = X.float()
+          X_sq = X**2
+          channel_sum    += torch.mean(X, dim=[1, 2])
+          channel_sum_sq += torch.mean(X_sq, dim=[1, 2])
+        mean_X, mean_X_sq = channel_sum/examples, channel_sum_sq/examples
+        std_X = np.sqrt(mean_X_sq - mean_X**2)
+        return mean_X, std_X
+
     @staticmethod
     def combine(datasets, tf=None):
         assert len(datasets) > 0, "dataset is empty!"
